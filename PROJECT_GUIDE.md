@@ -301,20 +301,10 @@ sequenceDiagram
 
 ## 🛠️ How to Run & Configure
 
-### 1. Structure
-The project is split into:
-- `backend/`: The ASP.NET Core Web API.
-- `frontend/`: The React SPA frontend.
+### 1. Connection Strings & Local DB Setup
+By default, the application runs on **SQL Server**. Set up SQL Server LocalDB or a Developer edition instance and configure the connection string in `appsettings.json`.
 
-### 2. Connection Strings & Local DB Setup
-By default, the application runs on **SQL Server**. Set up SQL Server LocalDB or a Developer edition instance and configure the connection string in `backend/appsettings.json`.
-
-Navigate to the `backend/` directory first:
-```powershell
-cd backend
-```
-
-Then run the following commands to restore tools and push the database schema:
+Run the following commands to restore tools and push the database schema:
 ```powershell
 # Restore dotnet ef CLI tools
 dotnet tool restore
@@ -323,10 +313,9 @@ dotnet tool restore
 dotnet ef database update
 ```
 
-### 3. Run Command
-Run the backend application using:
+### 2. Run Command
+Run the application using:
 ```powershell
-cd backend
 dotnet run
 ```
-And navigate to the printed ports. The frontend can then be configured to target this API.
+And navigate to the printed ports.
