@@ -282,13 +282,31 @@ namespace PersonalFinanceTracker.Controllers
             return Json(new { success = true, message = "Password reset successfully. Redirecting to login..." });
         }
 
+        [HttpGet]
+        [Route("api/account/status")]
+        public IActionResult GetStatus()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var email = User.FindFirst(ClaimTypes.Email)?.Value;
+                var profilePic = User.FindFirst("ProfilePicture")?.Value;
+                return Ok(new { 
+                    isAuthenticated = true, 
+                    username = User.Identity.Name, 
+                    email = email,
+                    profilePictureUrl = profilePic
+                });
+            }
+            return Ok(new { isAuthenticated = false });
+        }
+
         [HttpPost]
         [Authorize]
-        [ValidateAntiForgeryToken]
+        [Route("api/account/logout")]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction(nameof(Login));
+            return Json(new { success = true });
         }
 
         private async Task SignInUserAsync(User user)
