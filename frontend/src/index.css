@@ -1,0 +1,64 @@
+/* -------------------------------------------------------------
+ * Theme variables, Fonts, Reset & Core UI Layout (English UI)
+ * ------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Fonts */
+  --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Shared Colors */
+  --color-income: #10b981;       /* Emerald */
+  --color-expense: #ef4444;      /* Rose */
+  --color-warning: #f59e0b;      /* Orange */
+  --color-safe: #3b82f6;         /* Blue */
+  
+  /* Dark Theme Tokens (Default) */
+  --bg-primary: #0a0b10;
+  --sidebar-bg: rgba(18, 20, 30, 0.7);
+  --glass-bg: rgba(22, 25, 41, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --accent-color: #6366f1;       /* Indigo */
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.15);
+  --card-hover-border: rgba(99, 102, 241, 0.3);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-focus-border: rgba(99, 102, 241, 0.5);
+  --table-row-hover: rgba(255, 255, 255, 0.02);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+}
+
+/* Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Card Style System */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--card-hover-border);
+  transform: translateY(-2px);
+}
