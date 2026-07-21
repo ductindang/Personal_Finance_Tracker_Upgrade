@@ -1,5 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext'; // Import AuthProvider
+import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transaction';
@@ -11,15 +13,36 @@ import Settings from './pages/Settings';
 import Register from './pages/Register';
 import Login from './pages/Login';
 
+// ====================================================
+// MIDDLEWARE GATE: Chịu trách nhiệm phân luồng toàn bộ úng dụng
+// ====================================================
+
 // 1. Tạo component con chứa logic sử dụng useLocation
 function AppContent() {
   const location = useLocation();
+  const { isAuthenticated, loading } = useAuth();
 
   // Danh sách các đường dẫn của trang Đăng nhập / Đăng ký
   // (Lưu ý: nên gõ chính xác '/register' có dấu gạch chéo ở trước nhé)
   const authPaths = ['/login', '/register'];
   const isAuthPage = authPaths.includes(location.pathname);
 
+  // 1. Trong lúc hệ thống đang gửi API kiểm tra Session (Loading)
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#0a0b10', color: '#9ca3af' }}>
+        Checking authentication...
+      </div>
+    );
+  }
+
+  // 2. Nếu chưa đăng nhập và cố tình truy cập các trang khác (không phải Login/Register)
+  // Nhảy thẳng về trang login ngay lập tức (Không render Sidebar hay khung trang)
+  if (!isAuthenticated && !isAuthPage) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 4. Nếu là trang Login/Register độc lập
   // Nếu là trang Login/Register, hiển thị tràn màn hình
   if (isAuthPage) {
     return (
@@ -30,6 +53,7 @@ function AppContent() {
     );
   }
 
+  // 5. Giao diện chính (Chỉ hiển thị khi ĐÃ ĐĂNG NHẬP)
   // Nếu không phải, hiển thị Sidebar bên trái và Main Content bên phải
   return (
     <div className="app-layout">
@@ -39,13 +63,14 @@ function AppContent() {
       {/* Main Content Area */}
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/budgets" element={<Budgets />} />
-          <Route path="/savings" element={<Savings />} />
-          <Route path="/recurring" element={<Recurring />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/categories" element={<Categories />} />
+          {/* Bọc toàn bộ các trang chức năng trong ProtectedRoute */}
+          <Route path="/" element={<ProtectedRoute><Dashboard />{/* Dashboard ở đây chính là 'children' trong file ProtectedRoute.jsx */} </ProtectedRoute>} />
+          <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+          <Route path="/budgets" element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
+          <Route path="/savings" element={<ProtectedRoute><Savings /></ProtectedRoute>} />
+          <Route path="/recurring" element={<ProtectedRoute><Recurring /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>
@@ -56,7 +81,10 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      {/* Bọc AuthProvider ở ngoài cùng để tất cả các route bên dưới đều truy cập được kho AuthContext */}
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 }
