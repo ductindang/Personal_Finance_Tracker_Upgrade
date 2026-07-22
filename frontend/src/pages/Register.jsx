@@ -239,9 +239,15 @@ function Register() {
           <div className="divider">or continue with</div>
 
           <div className="social-login-row">
-            <button className="social-icon-btn" title="Sign up with Google">G</button>
-            <button className="social-icon-btn" title="Sign up with GitHub">GH</button>
-            <button className="social-icon-btn" title="Sign up with Facebook">F</button>
+            <a href="http://localhost:5051/Account/ExternalLogin?provider=Google" className="social-icon-btn google-btn" title="Sign up with Google">
+              <i className="fa-brands fa-google google-icon"></i>
+            </a>
+            <a href="#" className="social-icon-btn github-btn" title="Sign up with GitHub">
+              <i className="fa-brands fa-github github-icon"></i>
+            </a>
+            <a href="#" className="social-icon-btn facebook-btn" title="Sign up with Facebook">
+              <i className="fa-brands fa-facebook facebook-icon"></i>
+            </a>
           </div>
 
           <div className="register-link-wrapper">

@@ -47,8 +47,10 @@ builder.Services.AddAuthentication(options =>
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         return Task.CompletedTask;
     };
-    options.Cookie.SameSite = SameSiteMode.None; // Crucial for cross-domain cookie sharing
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Required for SameSite=None
+    // SameSite=Lax là cài đặt an toàn quan trọng để trình duyệt chấp nhận Cookie trên môi trường http://localhost
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    // SameSite=Lax chỉ hoạt động với HTTPS, vì vậy cần set SecurePolicy = SameAsRequest để cho phép http
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.HttpOnly = true;
 })
 .AddCookie("ExternalCookie")
@@ -101,7 +103,7 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseRouting();
 
 // Enable CORS

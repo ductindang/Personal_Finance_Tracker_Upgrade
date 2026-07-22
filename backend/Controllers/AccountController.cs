@@ -9,6 +9,8 @@ using PersonalFinanceTracker.Services.Interfaces;
 
 namespace PersonalFinanceTracker.Controllers
 {
+    [ApiController]
+    [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
         private readonly IAccountService _accountService;
@@ -20,20 +22,19 @@ namespace PersonalFinanceTracker.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Index", "Home");
-            }
+        //[HttpGet]
+        //public IActionResult Login(string? returnUrl = null)
+        //{
+        //    if (User.Identity?.IsAuthenticated == true)
+        //    {
+        //        return RedirectToAction("Index", "Home");
+        //    }
 
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
+        //    ViewData["ReturnUrl"] = returnUrl;
+        //    return View();
+        //}
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
@@ -61,19 +62,18 @@ namespace PersonalFinanceTracker.Controllers
             return Json(new { success = true, redirectUrl });
         }
 
-        [HttpGet]
-        public IActionResult Register()
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Index", "Home");
-            }
+        //[HttpGet]
+        //public IActionResult Register()
+        //{
+        //    if (User.Identity?.IsAuthenticated == true)
+        //    {
+        //        return RedirectToAction("Index", "Home");
+        //    }
 
-            return View();
-        }
+        //    return View();
+        //}
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
@@ -145,12 +145,6 @@ namespace PersonalFinanceTracker.Controllers
         public IActionResult ExternalLogin(string provider = "Google", string? returnUrl = null)
         {
             var googleClientId = _configuration["Authentication:Google:ClientId"];
-            
-            // Check if actual Google keys are configured. If not, redirect to Simulated consent flow
-            if (string.IsNullOrEmpty(googleClientId) || googleClientId == "MOCK_CLIENT_ID")
-            {
-                return RedirectToAction("SimulatedGoogleLogin", new { returnUrl });
-            }
 
             var redirectUrl = Url.Action("GoogleCallback", "Account", new { returnUrl });
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
@@ -163,61 +157,25 @@ namespace PersonalFinanceTracker.Controllers
             var result = await HttpContext.AuthenticateAsync("ExternalCookie");
             if (!result.Succeeded || result.Principal == null)
             {
-                TempData["ErrorMessage"] = "Google authentication failed.";
-                return RedirectToAction(nameof(Login));
+                var targetFail = string.IsNullOrEmpty(returnUrl) ? "http://localhost:5173/login" : returnUrl;
+                return Redirect(targetFail);
             }
 
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
-            var picture = result.Principal.FindFirstValue("picture"); // Standard OIDC profile image claim
+            var picture = result.Principal.FindFirstValue("picture");
 
             if (string.IsNullOrEmpty(email))
             {
-                TempData["ErrorMessage"] = "Could not retrieve email from Google.";
-                return RedirectToAction(nameof(Login));
+                return Redirect("http://localhost:5173/login");
             }
 
             var user = await _accountService.SyncGoogleUserAsync(email, name, picture);
             await SignInUserAsync(user);
             await HttpContext.SignOutAsync("ExternalCookie");
 
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            return RedirectToAction("Index", "Home");
-        }
-
-        [HttpGet]
-        public IActionResult SimulatedGoogleLogin(string? returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SimulatedGoogleLogin(string email, string name, string? returnUrl = null)
-        {
-            if (string.IsNullOrEmpty(email) || !email.Contains("@"))
-            {
-                ModelState.AddModelError(string.Empty, "Please enter a valid email address.");
-                return View();
-            }
-
-            // Sync user details locally (sync data to my application)
-            var mockAvatar = "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:e878da9b-63da-4d9d-895d-92478f695579/152fb82e-dd1a-44a4-bdca-57ab9feb5d58/48";
-            var user = await _accountService.SyncGoogleUserAsync(email, name ?? email.Split('@')[0], mockAvatar);
-            
-            await SignInUserAsync(user);
-
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            return RedirectToAction("Index", "Home");
+            var targetSuccess = string.IsNullOrEmpty(returnUrl) ? "http://localhost:5173/" : returnUrl;
+            return Redirect(targetSuccess);
         }
 
         [HttpGet]
@@ -283,7 +241,7 @@ namespace PersonalFinanceTracker.Controllers
         }
 
         [HttpGet]
-        [Route("api/account/status")]
+        [Route("/api/account/status")]
         public IActionResult GetStatus()
         {
             if (User.Identity?.IsAuthenticated == true)
@@ -302,7 +260,7 @@ namespace PersonalFinanceTracker.Controllers
 
         [HttpPost]
         [Authorize]
-        [Route("api/account/logout")]
+        [Route("/api/account/logout")]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

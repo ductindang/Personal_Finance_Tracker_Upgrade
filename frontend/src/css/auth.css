@@ -355,6 +355,25 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
+.google-btn i {
+  font-size: 18px;
+  background: conic-gradient(from -45deg, #ea4335 110deg, #4285f4 90deg 180deg, #34a853 180deg 270deg, #fbbc05 270deg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.github-icon {
+  font-size: 19px;
+  color: #1e293b;
+}
+
+.facebook-icon {
+  font-size: 19px;
+  color: #1877f2;
+}
+
 .divider {
   display: flex;
   align-items: center;

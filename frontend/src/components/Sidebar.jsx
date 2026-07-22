@@ -1,4 +1,5 @@
 import React from 'react';
+import {useAuth} from '../context/AuthContext';
 import { NavLink } from 'react-router-dom'; // Using NavLink automatically applies active class when matches URL
 import { 
   Wallet, 
@@ -14,11 +15,14 @@ import {
 import '../css/sidebar.css';
 
 function Sidebar() {
-  // Mock data for user profile - we will connect this to Authentication Context later
+  // Lấy thông tin user hiện tại và hàm logout từ AuthContext
+  const {user: authUser, logout} = useAuth();
+
+  // Tạo một đối tượng user mặc định đề phòng tường hợp thiếu thông tin
   const user = {
-    name: 'Tin Dang',
-    avatar: 'https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/712020:e878da9b-63da-4d9d-895d-92478f695579/152fb82e-dd1a-44a4-bdca-57ab9feb5d58/48',
-    role: 'Authenticated'
+    name: authUser?.username || 'Guest',
+    avatar: authUser?.profilePictureUrl || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
+    role: authUser ? 'Authenticated' : 'Guest'
   };
 
   return (
@@ -67,7 +71,7 @@ function Sidebar() {
             <span className="user-name">{user.name}</span>
             <span className="user-role">{user.role}</span>
           </div>
-          <button className="logout-btn" title="Log Out">
+          <button className="logout-btn" title="Log Out" onClick={logout}>
             <LogOut size={16} />
           </button>
         </div>

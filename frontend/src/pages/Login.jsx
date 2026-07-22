@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {useAuth} from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
@@ -6,6 +7,7 @@ import '../css/auth.css'; // Import the shared authentication CSS
 
 function Login() {
   const navigate = useNavigate();
+  const {checkAuthStatus} = useAuth(); // Gọi hàm cập nhật trạng thái
 
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
@@ -33,11 +35,11 @@ function Login() {
       const response = await api.post('/Account/Login', formData);
 
       if (response.data.success) {
-        setSuccessMessage('Login successful! Redirecting...');
-        setTimeout(() => {
-          navigate('/');
-          window.location.reload(); 
-        }, 1500);
+        setSuccessMessage('Login successful! Redirecting to dashboard...');
+        // Gọi hàm cập nhật trạng thái đăng nhập lên react ngay lập tức
+        await checkAuthStatus();
+        // chuyển hướng về trang chủ
+        navigate('/');
       } else if (response.data.requiresVerification) {
         setErrorMessage('Email not verified. Redirecting...');
         setTimeout(() => {
@@ -140,9 +142,15 @@ function Login() {
 
           {/* Social Logins */}
           <div className="social-login-row">
-            <button className="social-icon-btn" title="Sign in with Google">G</button>
-            <button className="social-icon-btn" title="Sign in with GitHub">GH</button>
-            <button className="social-icon-btn" title="Sign in with Facebook">F</button>
+            <a href="http://localhost:5051/Account/ExternalLogin?provider=Google" className="social-icon-btn google-btn" title="Sign in with Google">
+              <i className="fa-brands fa-google google-icon"></i>
+            </a>
+            <a href="#" className="social-icon-btn github-btn" title="Sign in with GitHub">
+              <i className="fa-brands fa-github github-icon"></i>
+            </a>
+            <a href="#" className="social-icon-btn facebook-btn" title="Sign in with Facebook">
+              <i className="fa-brands fa-facebook facebook-icon"></i>
+            </a>
           </div>
 
           <div className="register-link-wrapper">

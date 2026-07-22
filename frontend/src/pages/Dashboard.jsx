@@ -46,7 +46,7 @@ function Dashboard() {
                     </div>
                     <div className="card-info">
                         <h3 className="card-title">Net Balance</h3>
-                        <p className="card-amount">${summary.balance.toFixed(2)}</p>
+                        <p className="card-amount">${(summary?.balance ?? 0).toFixed(2)}</p>
                     </div>
                  </div>
 
@@ -61,7 +61,7 @@ function Dashboard() {
                     <div className="card-info">
                         <h3 className="card-title">Total Income</h3>
                         <p className="card-amount" style={{ color: 'var(--color-income)' }}>
-                          +${summary.totalIncome.toFixed(2)}
+                          +${(summary?.income ?? 0).toFixed(2)}
                         </p>
                     </div>
                 </div>
@@ -77,7 +77,7 @@ function Dashboard() {
                     <div className="card-info">
                         <h3 className="card-title">Total Expense</h3>
                         <p className="card-amount" style={{ color: 'var(--color-expense)' }}>
-                          -${summary.totalExpense.toFixed(2)}
+                          -${(summary?.expense ?? 0).toFixed(2)}
                         </p>
                     </div>
                 </div>
