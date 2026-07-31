@@ -16,6 +16,7 @@ namespace PersonalFinanceTracker.Data
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<RecurringTransaction> RecurringTransactions { get; set; } = null!;
+        public DbSet<UserSecurityCode> UserSecurityCodes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

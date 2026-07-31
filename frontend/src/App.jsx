@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import {Toaster} from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 import Sidebar from './components/Sidebar';
@@ -12,6 +13,7 @@ import Recurring from './pages/Recurring';
 import Settings from './pages/Settings';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import VerifyEmail from './pages/VerifyEmail';
 
 // ====================================================
 // MIDDLEWARE GATE: Chịu trách nhiệm phân luồng toàn bộ úng dụng
@@ -24,7 +26,7 @@ function AppContent() {
 
   // Danh sách các đường dẫn của trang Đăng nhập / Đăng ký
   // (Lưu ý: nên gõ chính xác '/register' có dấu gạch chéo ở trước nhé)
-  const authPaths = ['/login', '/register'];
+  const authPaths = ['/login', '/register', '/verify-email'];
   const isAuthPage = authPaths.includes(location.pathname);
 
   // 1. Trong lúc hệ thống đang gửi API kiểm tra Session (Loading)
@@ -49,6 +51,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail/>}/>
       </Routes>
     );
   }
@@ -84,6 +87,12 @@ function App() {
       {/* Bọc AuthProvider ở ngoài cùng để tất cả các route bên dưới đều truy cập được kho AuthContext */}
       <AuthProvider>
         <AppContent />
+        {/* Thêm cấu hình Toaster hiển thị ở góc phải phía trên */}
+        <Toaster 
+          position='top-right'
+          reverseOrder={false}
+          toastOption={{style:{background: '#161929', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.08'}}}
+        />
       </AuthProvider>
     </Router>
   );

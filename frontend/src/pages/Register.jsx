@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 import '../css/auth.css'; // Import the shared authentication CSS
 
 function Register() {
@@ -17,8 +18,6 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const [passwordStrength, setPasswordStrength] = useState({
     percent: 0,
@@ -64,11 +63,9 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      toast.error('Passwords do not match.');
       return;
     }
 
@@ -76,29 +73,34 @@ function Register() {
       const response = await api.post('/Account/Register', formData);
       
       if (response.data.success) {
-        setSuccessMessage('Registration successful! Redirecting to verification...');
+        toast.success('Registration successful! Redirecting to verification...');
         setTimeout(() => {
           navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
         }, 2000);
       } else {
         if (response.data.errors) {
-          setErrorMessage(response.data.errors.join(' '));
+          toast.error(response.data.errors.join(' '));
         } else {
-          setErrorMessage('Registration failed.');
+          toast.error('Registration failed.');
         }
       }
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response?.data?.errors) {
-        setErrorMessage(error.response.data.errors.join(' '));
+        toast.error(error.response.data.errors.join(' '));
       } else {
-        setErrorMessage('An unexpected error occurred. Please try again.');
+        toast.error('An unexpected error occurred. Please try again.');
       }
     }
   };
 
   return (
     <div className="auth-body-wrapper">
+      {loading && (
+        <div className='loading-overlay'>
+          <div className='spinner'></div>
+        </div>
+      )}
       {/* Background blobs */}
       <div className="bg-blur blob-1"></div>
       <div className="bg-blur blob-2"></div>

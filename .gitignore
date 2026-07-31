@@ -290,3 +290,6 @@ Aspire.Sitemanager.WebAdmin/Properties/PublishProfiles/SM_Hoang_Local_Admin.pubx
 *.jfm
 /logs
 Aspire.SitemanagerPlus.WebClient/Properties/PublishProfiles/FolderProfile5.pubxml
+
+# VS Code Edge Debug Profile
+.vscode/edge-debug-profile/

@@ -10,12 +10,14 @@ namespace PersonalFinanceTracker.Services;
 public class AccountService : IAccountService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUserSecurityCodeRepository _securityCodeRepository;
     private readonly PasswordHasher<User> _passwordHasher;
     private readonly IEmailService _emailService;
 
-    public AccountService(IUserRepository userRepository, IEmailService emailService)
+    public AccountService(IUserRepository userRepository, IUserSecurityCodeRepository securityCodeRepository, IEmailService emailService)
     {
         _userRepository = userRepository;
+        _securityCodeRepository = securityCodeRepository;
         _passwordHasher = new PasswordHasher<User>();
         _emailService = emailService;
     }
@@ -42,15 +44,25 @@ public class AccountService : IAccountService
             Username = model.Username,
             Email = model.Email,
             FullName = model.FullName,
-            IsEmailVerified = false,
-            VerificationCode = code,
-            VerificationCodeLastSent = DateTime.UtcNow
+            IsEmailVerified = false
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        // Save verification code to new history table
+        var securityCode = new UserSecurityCode
+        {
+            UserId = user.Id,
+            Code = code,
+            CodeType = "EmailVerification",
+            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            IsUsed = false
+        };
+        await _securityCodeRepository.AddAsync(securityCode);
+        await _securityCodeRepository.SaveChangesAsync();
 
         // Send actual email
         var subject = "Verify your email address - Aura Finance Tracker";
@@ -113,8 +125,7 @@ public class AccountService : IAccountService
                 Email = email,
                 FullName = name,
                 ProfilePictureUrl = pictureUrl,
-                IsEmailVerified = true,
-                VerificationCode = null
+                IsEmailVerified = true
             };
             await _userRepository.AddAsync(user);
         }
@@ -123,7 +134,6 @@ public class AccountService : IAccountService
             user.FullName = name ?? user.FullName;
             user.ProfilePictureUrl = pictureUrl ?? user.ProfilePictureUrl;
             user.IsEmailVerified = true;
-            user.VerificationCode = null;
             _userRepository.Update(user);
         }
 
@@ -137,44 +147,37 @@ public class AccountService : IAccountService
         return user != null;
     }
 
-    /// <summary>
-    /// Generates and sends a 6-digit verification code to the specified email address if the user exists.
-    /// Implements a 30-second resend cooldown rate limit.
-    /// </summary>
     public async Task<(bool Success, string? ErrorMessage)> SendVerificationCodeAsync(string email)
     {
-        // 1. Retrieve the user by email from the database repository.
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
             return (false, "User with this email does not exist.");
         }
 
-        // 2. Validate the 30-second resend cooldown timer.
-        // Compare the current UTC time against the last sent timestamp to prevent spamming verification code requests.
-        if (user.PasswordResetCodeLastSent.HasValue && (DateTime.UtcNow - user.PasswordResetCodeLastSent.Value).TotalSeconds < 30)
+        // Validate 30-second cooldown from the latest generated code of this type
+        var latestCode = await _securityCodeRepository.GetLatestCodeAsync(user.Id, "PasswordReset");
+        if (latestCode != null && (DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds < 30)
         {
-            var remaining = 30 - (int)(DateTime.UtcNow - user.PasswordResetCodeLastSent.Value).TotalSeconds;
+            var remaining = 30 - (int)(DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds;
             return (false, $"Please wait {remaining} seconds before requesting a new verification code.");
         }
 
-        // 3. Generate a random 6-digit numeric verification code.
         var random = new Random();
         var code = random.Next(100000, 999999).ToString();
 
-        // 4. Update the user properties with the verification details:
-        // - Code: The newly generated 6-digit code.
-        // - Expiry: Set to expire in 15 minutes from now.
-        // - LastSent: Store the current Utc time for rate-limiting.
-        user.PasswordResetCode = code;
-        user.PasswordResetCodeExpiry = DateTime.UtcNow.AddMinutes(15);
-        user.PasswordResetCodeLastSent = DateTime.UtcNow;
+        // Save new code to history table
+        var securityCode = new UserSecurityCode
+        {
+            UserId = user.Id,
+            Code = code,
+            CodeType = "PasswordReset",
+            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            IsUsed = false
+        };
+        await _securityCodeRepository.AddAsync(securityCode);
+        await _securityCodeRepository.SaveChangesAsync();
 
-        // 5. Save the updated user properties to the database.
-        _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync();
-
-        // 6. Build the HTML email message payload.
         var subject = "Your Password Reset Verification Code";
         var body = $@"
             <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 5px; max-width: 500px;'>
@@ -189,18 +192,15 @@ public class AccountService : IAccountService
                 <p style='font-size: 12px; color: #6b7280;'>This is an automated email, please do not reply.</p>
             </div>";
 
-        // 7. Hand off the email transmission to the SMTP EmailService.
         try
         {
             await _emailService.SendEmailAsync(email, subject, body);
         }
         catch (Exception ex)
         {
-            // Logging SMTP server transmission errors.
             Console.WriteLine($"[EMAIL ERROR] Failed to send actual email to {email}: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"[EMAIL ERROR] Failed to send actual email to {email}: {ex.Message}");
             
-            // Fallback simulation: Log the generated code to the console to ensure developers can still bypass in local debugging.
             Console.WriteLine($"\n==================================================");
             Console.WriteLine($"[FALLBACK SIMULATION] Verification Code for {email}: {code}");
             Console.WriteLine($"==================================================\n");
@@ -211,26 +211,22 @@ public class AccountService : IAccountService
         return (true, null);
     }
 
-    /// <summary>
-    /// Validates the user's submitted 6-digit code against database record matching value and expiry window.
-    /// </summary>
     public async Task<(bool Success, string? ErrorMessage)> VerifyCodeAsync(string email, string code)
     {
-        // 1. Retrieve the user by email address.
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
             return (false, "User not found.");
         }
 
-        // 2. Validate code matching.
-        if (string.IsNullOrEmpty(user.PasswordResetCode) || user.PasswordResetCode != code)
+        // Get the latest active verification code
+        var activeCode = await _securityCodeRepository.GetLatestActiveCodeAsync(user.Id, "PasswordReset");
+        if (activeCode == null || activeCode.Code != code)
         {
             return (false, "Invalid verification code.");
         }
 
-        // 3. Validate code lifetime.
-        if (!user.PasswordResetCodeExpiry.HasValue || user.PasswordResetCodeExpiry.Value < DateTime.UtcNow)
+        if (activeCode.ExpiryTime < DateTime.UtcNow)
         {
             return (false, "Verification code has expired.");
         }
@@ -238,12 +234,8 @@ public class AccountService : IAccountService
         return (true, null);
     }
 
-    /// <summary>
-    /// Verifies verification code first, then hashes the new password and persists it.
-    /// </summary>
     public async Task<(bool Success, string? ErrorMessage)> ResetPasswordAsync(string email, string code, string newPassword)
     {
-        // 1. Re-verify the code to ensure session state remains integral during resetting.
         var verifyResult = await VerifyCodeAsync(email, code);
         if (!verifyResult.Success)
         {
@@ -256,12 +248,18 @@ public class AccountService : IAccountService
             return (false, "User not found.");
         }
 
-        // 2. Hash the user's new password and clean up reset values.
-        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
-        user.PasswordResetCode = null;
-        user.PasswordResetCodeExpiry = null;
+        // Mark the active verification code as used
+        var activeCode = await _securityCodeRepository.GetLatestActiveCodeAsync(user.Id, "PasswordReset");
+        if (activeCode != null)
+        {
+            activeCode.IsUsed = true;
+            _securityCodeRepository.Update(activeCode);
+        }
 
-        // 3. Persist the updated entity modifications.
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        _userRepository.Update(user);
+
+        await _securityCodeRepository.SaveChangesAsync();
         await _userRepository.SaveChangesAsync();
 
         return (true, null);
@@ -280,15 +278,26 @@ public class AccountService : IAccountService
             return (true, null);
         }
 
-        if (string.IsNullOrEmpty(user.VerificationCode) || user.VerificationCode != code)
+        // Get the latest active email verification code
+        var activeCode = await _securityCodeRepository.GetLatestActiveCodeAsync(user.Id, "EmailVerification");
+        if (activeCode == null || activeCode.Code != code)
         {
             return (false, "Invalid verification code.");
         }
 
-        user.IsEmailVerified = true;
-        user.VerificationCode = null;
+        if (activeCode.ExpiryTime < DateTime.UtcNow)
+        {
+            return (false, "Verification code has expired.");
+        }
 
+        // Mark code as used and update user verification status
+        activeCode.IsUsed = true;
+        _securityCodeRepository.Update(activeCode);
+
+        user.IsEmailVerified = true;
         _userRepository.Update(user);
+
+        await _securityCodeRepository.SaveChangesAsync();
         await _userRepository.SaveChangesAsync();
 
         return (true, null);
@@ -307,19 +316,28 @@ public class AccountService : IAccountService
             return (false, "This email is already verified.");
         }
 
-        if (user.VerificationCodeLastSent.HasValue && (DateTime.UtcNow - user.VerificationCodeLastSent.Value).TotalSeconds < 30)
+        // Validate 30-second cooldown from the latest generated code of this type
+        var latestCode = await _securityCodeRepository.GetLatestCodeAsync(user.Id, "EmailVerification");
+        if (latestCode != null && (DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds < 30)
         {
-            var remaining = 30 - (int)(DateTime.UtcNow - user.VerificationCodeLastSent.Value).TotalSeconds;
+            var remaining = 30 - (int)(DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds;
             return (false, $"Please wait {remaining} seconds before requesting a new verification code.");
         }
 
         var random = new Random();
         var code = random.Next(100000, 999999).ToString();
 
-        user.VerificationCode = code;
-        user.VerificationCodeLastSent = DateTime.UtcNow;
-        _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync();
+        // Save new code to history table
+        var securityCode = new UserSecurityCode
+        {
+            UserId = user.Id,
+            Code = code,
+            CodeType = "EmailVerification",
+            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            IsUsed = false
+        };
+        await _securityCodeRepository.AddAsync(securityCode);
+        await _securityCodeRepository.SaveChangesAsync();
 
         var subject = "Verify your email address - Aura Finance Tracker";
         var body = $@"

@@ -69,6 +69,7 @@ builder.Services.AddScoped<ISavingsGoalRepository, SavingsGoalRepository>();
 builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IRecurringTransactionRepository, RecurringTransactionRepository>();
+builder.Services.AddScoped<IUserSecurityCodeRepository, UserSecurityCodeRepository>();
 
 // Register Services
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));

@@ -53,7 +53,7 @@ namespace PersonalFinanceTracker.Controllers
 
             if (!user.IsEmailVerified)
             {
-                return Json(new { success = false, requiresVerification = true, redirectUrl = Url.Action(nameof(VerifyEmail), new { email = user.Email }) });
+                return Json(new { success = false, requiresVerification = true, redirectUrl = $"/verify-email?email={user.Email}" });
             }
 
             await SignInUserAsync(user);
@@ -88,23 +88,22 @@ namespace PersonalFinanceTracker.Controllers
                 return Json(new { success = false, errors = new[] { errorMessage ?? "Registration failed." } });
             }
 
-            return Json(new { success = true, redirectUrl = Url.Action(nameof(VerifyEmail), new { email = model.Email }) });
+            return Json(new { success = true, redirectUrl = $"/verify-email?email={model.Email}"});
         }
 
-        [HttpGet]
-        public IActionResult VerifyEmail(string email)
-        {
-            if (string.IsNullOrEmpty(email))
-            {
-                return RedirectToAction(nameof(Login));
-            }
+        //[HttpGet]
+        //public IActionResult VerifyEmail(string email)
+        //{
+        //    if (string.IsNullOrEmpty(email))
+        //    {
+        //        return RedirectToAction(nameof(Login));
+        //    }
 
-            ViewData["Email"] = email;
-            return View();
-        }
+        //    ViewData["Email"] = email;
+        //    return View();
+        //}
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyEmail(string email, string code)
         {
             ViewData["Email"] = email;
@@ -124,7 +123,6 @@ namespace PersonalFinanceTracker.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendVerificationCode(string email)
         {
             if (string.IsNullOrEmpty(email))

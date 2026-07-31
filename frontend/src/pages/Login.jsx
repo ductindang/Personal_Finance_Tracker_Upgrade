@@ -3,11 +3,14 @@ import {useAuth} from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
+// import {useToast} from '../context/ToastContext';
+import {toast} from 'react-hot-toast';
 import '../css/auth.css'; // Import the shared authentication CSS
 
 function Login() {
   const navigate = useNavigate();
   const {checkAuthStatus} = useAuth(); // Gọi hàm cập nhật trạng thái
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
@@ -15,8 +18,6 @@ function Login() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,42 +29,67 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setLoading(true);
 
     try {
       const response = await api.post('/Account/Login', formData);
 
       if (response.data.success) {
-        setSuccessMessage('Login successful! Redirecting to dashboard...');
+        toast.success('Login successful! Redirecting to dashboard...');
         // Gọi hàm cập nhật trạng thái đăng nhập lên react ngay lập tức
         await checkAuthStatus();
         // chuyển hướng về trang chủ
         navigate('/');
+        setLoading(false);
       } else if (response.data.requiresVerification) {
-        setErrorMessage('Email not verified. Redirecting...');
+        toast.error('Email not verified. Redirecting...');
         setTimeout(() => {
           navigate(response.data.redirectUrl);
+          setLoading(false);
         }, 2000);
       } else {
         if (response.data.errors) {
-          setErrorMessage(response.data.errors.join(' '));
+          toast.error(response.data.errors.join(' '));
         } else {
-          setErrorMessage('Invalid login credentials.');
+          toast.error('Invalid login credentials.');
         }
+        setLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
       if (error.response?.data?.errors) {
-        setErrorMessage(error.response.data.errors.join(' '));
+        const errs = error.response.data.errors;
+        // Trường hợp là Object (lỗi Model Validation từ ASP.NET Core)
+        if (typeof errs === 'object' && !Array.isArray(errs)) {
+          const message = Object.values(errs).flat().join(' ');
+          toast.error(message);
+        } 
+        // Trường hợp là Mảng chuỗi thông thường
+        else if (Array.isArray(errs)) {
+          toast.error(errs.join(' '));
+        } 
+        // Trường hợp là chuỗi đơn lẻ
+        else {
+          toast.error(errs);
+        }
+        setLoading(false);
       } else {
-        setErrorMessage('An error occurred during login. Please try again.');
+        toast.error(error.response?.data?.title || 'An error occurred during login. Please try again.');
       }
+    }finally{
+      
     }
   };
 
   return (
     <div className="auth-body-wrapper">
+      {/* Đoạn code hiển thị xoay xoay và làm mờ nền */}
+      {loading && (
+        <div className='loading-overlay'>
+          <div className='spinner'></div>
+        </div>
+      )}
+
       {/* Background blobs */}
       <div className="bg-blur blob-1"></div>
       <div className="bg-blur blob-2"></div>
@@ -86,9 +112,6 @@ function Login() {
             <div className="auth-logo-text">Your logo</div>
             <h1 className="auth-title">Login</h1>
           </div>
-
-          {errorMessage && <div className="auth-alert">{errorMessage}</div>}
-          {successMessage && <div className="auth-alert-success">{successMessage}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form">
             {/* Username / Email */}
