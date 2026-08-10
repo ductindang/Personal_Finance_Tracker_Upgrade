@@ -13,6 +13,35 @@ function VerifyEmail() {
 
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0); // mặc định là 0 -  được phép bấm
+
+    useEffect(() => {
+        if(resendCooldown === 0) return;
+
+        // Cứ sau 1s, giảm giá trị đếm ngược đi 1
+        const timer = setInterval(() => {
+            setResendCooldown((prev) => prev - 1);
+        }, 1000);
+
+        // Dọn dẹp bộ đếm khi component unmount hoặc đếm xong
+        return () => clearInterval(timer);
+    }, [resendCooldown]);
+
+    // Kiểm tra cooldown còn lại từ Backend khi load trang (chống bấm F5 để lách luật)
+    useEffect(() => {
+        const fetchCooldown = async () => {
+            if (!email) return;
+            try {
+                const response = await api.get(`/Account/GetVerificationCooldown?email=${encodeURIComponent(email)}`);
+                if (response.data.success && response.data.remainingSeconds > 0) {
+                    setResendCooldown(response.data.remainingSeconds);
+                }
+            } catch (error) {
+                console.error('Failed to fetch verification cooldown:', error);
+            }
+        };
+        fetchCooldown();
+    }, [email]);
 
     // xử lý gửi mã xác thực lên Backend
     const handleSubmit = async (e) => {
@@ -49,16 +78,29 @@ function VerifyEmail() {
 
     // Xử lý gửi lại mã xác thực mới
     const handleResendCode = async () => {
+        if(resendCooldown > 0 || loading){
+            return;
+        }
+
+        setLoading(true);
+
         try{
             const response = await api.post(`/Account/ResendVerificationCode?email=${encodeURIComponent(email)}`);
             if(response.data.success){
                 toast.success('A new verification code has been sent to your email');
+                setResendCooldown(30) // Bắt đầu đếm ngược 30s
             }else{
                 toast.error('Failed to resend code.');
             }
         }catch(error){
             console.error('Resend error: ', error);
-            toast.error('Failed to resend code. Please try again');
+            if (error.response?.data?.errors) {
+                setErrorMessage(error.response.data.errors.join(' '));
+            } else {
+                setErrorMessage('Failed to resend code. Please try again.');
+            }
+        }finally{
+            setLoading(false);
         }
     };
 
@@ -106,10 +148,31 @@ function VerifyEmail() {
                     </form>
 
                     <div style={{textAlign:'center', marginTop:'24px', fontSize:'13px', color:'rgba(255, 255, 255, 0, 7'}}>
-                        <span>Didn't receive the code?</span>
-                        <button type='button' onClick={handleResendCode} style={{background: 'transparent', border: 'none', color: '#fff', fontWeight:'600', cursor:'pointer', textDecoration:'underline', padding: 0}}>
-                            Resend Code
-                        </button>
+                        
+                        {
+                        loading ? (
+                            <span className='loading-dots'>Sending code</span>
+                        ) : resendCooldown > 0 ? (
+                            <span>You will be able to request a new code in {resendCooldown} seconds.</span>
+                        ) : 
+                            <>
+                                <span>Didn't receive the code?  </span>
+                                <button 
+                                    type='button' 
+                                    onClick={handleResendCode} 
+                                    style={{background: 'transparent', 
+                                        border: 'none', 
+                                        color: '#fff', 
+                                        fontWeight:'600', 
+                                        cursor:'pointer', 
+                                        textDecoration:'underline', 
+                                        padding: 0}}>
+                                    Resend Code
+                                </button>
+                            </>
+                            
+                        }
+                        
                     </div>
                 </div>
             </div>

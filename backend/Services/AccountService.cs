@@ -58,7 +58,7 @@ public class AccountService : IAccountService
             UserId = user.Id,
             Code = code,
             CodeType = "EmailVerification",
-            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            ExpiryTime = DateTime.UtcNow.AddMinutes(2),
             IsUsed = false
         };
         await _securityCodeRepository.AddAsync(securityCode);
@@ -172,7 +172,7 @@ public class AccountService : IAccountService
             UserId = user.Id,
             Code = code,
             CodeType = "PasswordReset",
-            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            ExpiryTime = DateTime.UtcNow.AddMinutes(2),
             IsUsed = false
         };
         await _securityCodeRepository.AddAsync(securityCode);
@@ -323,21 +323,35 @@ public class AccountService : IAccountService
             var remaining = 30 - (int)(DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds;
             return (false, $"Please wait {remaining} seconds before requesting a new verification code.");
         }
+        string code;
 
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
-
-        // Save new code to history table
-        var securityCode = new UserSecurityCode
+        var activeCode = await _securityCodeRepository.GetLatestActiveCodeAsync(user.Id, "EmailVerification");
+        if(activeCode != null)
         {
-            UserId = user.Id,
-            Code = code,
-            CodeType = "EmailVerification",
-            ExpiryTime = DateTime.UtcNow.AddMinutes(15),
-            IsUsed = false
-        };
-        await _securityCodeRepository.AddAsync(securityCode);
-        await _securityCodeRepository.SaveChangesAsync();
+            // if the code is not expire
+            code = activeCode.Code;
+
+            //activeCode.CreatedAt = DateTime.UtcNow;
+            _securityCodeRepository.Update(activeCode);
+            await _securityCodeRepository.SaveChangesAsync();
+        }
+        else
+        {
+            var random = new Random();
+            code = random.Next(100000, 999999).ToString();
+
+            // Save new code to history table
+            var securityCode = new UserSecurityCode
+            {
+                UserId = user.Id,
+                Code = code,
+                CodeType = "EmailVerification",
+                ExpiryTime = DateTime.UtcNow.AddMinutes(2),
+                IsUsed = false
+            };
+            await _securityCodeRepository.AddAsync(securityCode);
+            await _securityCodeRepository.SaveChangesAsync();
+        }
 
         var subject = "Verify your email address - Aura Finance Tracker";
         var body = $@"
@@ -368,5 +382,25 @@ public class AccountService : IAccountService
         }
 
         return (true, null);
+    }
+
+    public async Task<int> GetVerificationCooldownSecondsAsync(string email, string codeType)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null) return 0;
+
+        // Take the latest code of the specified type
+        var latestCode = await _securityCodeRepository.GetLatestCodeAsync(user.Id, codeType);
+        if (latestCode == null) return 0;
+
+        // Calculate the remaining cooldown time
+        var elapsedSeconds = (DateTime.UtcNow - latestCode.CreatedAt).TotalSeconds;
+
+        // If the elapsed time is less than 30 seconds, return the remaining cooldown time
+        if(elapsedSeconds < 30)
+        {
+            return 30 - (int)elapsedSeconds;
+        }
+        return 0;
     }
 }

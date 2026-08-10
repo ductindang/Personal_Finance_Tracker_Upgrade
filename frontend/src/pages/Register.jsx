@@ -18,6 +18,7 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [passwordStrength, setPasswordStrength] = useState({
     percent: 0,
@@ -63,6 +64,7 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match.');
@@ -91,6 +93,8 @@ function Register() {
       } else {
         toast.error('An unexpected error occurred. Please try again.');
       }
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -123,9 +127,6 @@ function Register() {
             <div className="auth-logo-text">Your logo</div>
             <h1 className="auth-title">Register</h1>
           </div>
-
-          {errorMessage && <div className="auth-alert">{errorMessage}</div>}
-          {successMessage && <div className="auth-alert-success">{successMessage}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form">
             {/* Full Name */}

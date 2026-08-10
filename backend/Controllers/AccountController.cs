@@ -288,5 +288,18 @@ namespace PersonalFinanceTracker.Controllers
                 ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(20)
             });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetVerificationCooldown(string email, string codeType = "EmailVerification")
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return Json(new { success = false, remainingSeconds = 0 });
+            }
+
+            // Call service to get the remaining cooldown time
+            var remainingSeconds = await _accountService.GetVerificationCooldownSecondsAsync(email, codeType);
+            return Json(new { success = true, remainingSeconds });
+        }
     }
 }

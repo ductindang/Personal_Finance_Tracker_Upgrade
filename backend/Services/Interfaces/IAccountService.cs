@@ -14,4 +14,5 @@ public interface IAccountService
     Task<(bool Success, string? ErrorMessage)> ResetPasswordAsync(string email, string code, string newPassword);
     Task<(bool Success, string? ErrorMessage)> VerifyEmailCodeAsync(string email, string code);
     Task<(bool Success, string? ErrorMessage)> ResendEmailVerificationCodeAsync(string email);
+    Task<int> GetVerificationCooldownSecondsAsync(string email, string codeType);
 }
