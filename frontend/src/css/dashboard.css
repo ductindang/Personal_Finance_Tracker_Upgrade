@@ -1,16 +1,8 @@
-/* Dashboard Page Specific Styles */
+/* -------------------------------------------------------------
+ * Aura Dashboard Stylesheet
+ * ------------------------------------------------------------- */
 
-.dashboard-container {
-  padding: 20px 0;
-}
-
-.dashboard-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 20px;
-}
-
+/* Summary Cards Grid */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -31,6 +23,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.4rem;
 }
 
 .card-info {
@@ -52,4 +45,138 @@
   margin-top: 0.2rem;
   letter-spacing: -0.5px;
   color: var(--text-primary);
+}
+
+/* Charts Layout - Xếp 2 biểu đồ song song tỷ lệ 2:1 */
+.charts-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-container-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: var(--text-primary);
+}
+
+/* Chiều cao của biểu đồ bắt buộc phải có để ResponsiveContainer không bị xẹp về 0px */
+.chart-wrapper {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+/* Table Design */
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.transaction-table th {
+  padding: 1rem 1.2rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.transaction-table td {
+  padding: 1.1rem 1.2rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--glass-border);
+  transition: background-color 0.2s ease;
+}
+
+.transaction-table tr:last-child td {
+  border-bottom: none;
+}
+
+.transaction-table tr:hover td {
+  background-color: var(--table-row-hover);
+}
+
+/* Badges for Lists */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-category {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.amount-income {
+  color: var(--color-income);
+  font-weight: 600;
+}
+
+.amount-expense {
+  color: var(--color-expense);
+  font-weight: 600;
+}
+
+.btn-icon.delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-expense);
+}
+
+/* Recent Transaction Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.section-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-text {
+  display: flex;
+  align-items: center;
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
 }
