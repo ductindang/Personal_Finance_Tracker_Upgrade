@@ -29,7 +29,7 @@ function Transaction(){
         amount: '',
         type: 'expense',
         category: '',
-        data: new Date().toISOString().substring(0, 10) // Mặc định ngày hôm nay
+        date: new Date().toISOString().substring(0, 10) // Mặc định ngày hôm nay
     });
 
     // 4. LOAD DANH MỤC (CATEGORIES) ĐỂ FILL VÀO SELECCT OPTIONS
@@ -324,23 +324,31 @@ function Transaction(){
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={handleModalSubmit} className="auth-form">
-                            <div className="form-group">
-                                <label>Description</label>
-                                <div className="input-wrapper">
-                                    <input 
-                                        type="text" 
-                                        name="description" 
-                                        placeholder="e.g. Shopping Mall" 
-                                        value={modalData.description}
-                                        onChange={handleModalChange}
-                                        required 
-                                    />
+                        <form onSubmit={handleModalSubmit} className="modal-form">
+                            <div className="form-group" style={{ marginTop: '15px' }}>
+                                <label>Transaction Type</label>
+                                <div className="toggle-switch-wrapper">
+                                    <button
+                                        type="button"
+                                        className={`toggle-btn ${modalData.type === 'expense' ? 'active-expense' : ''}`}
+                                        onClick={() => handleModalChange({ target: { name: 'type', value: 'expense' } })}
+                                    >
+                                        Expense
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`toggle-btn ${modalData.type === 'income' ? 'active-income' : ''}`}
+                                        onClick={() => handleModalChange({ target: { name: 'type', value: 'income' } })}
+                                    >
+                                        Income
+                                    </button>
                                 </div>
                             </div>
+                            
                             <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Amount ($)</label>
-                                <div className="input-wrapper">
+                                <label>Amount</label>
+                                <div className="input-prefix-wrapper">
+                                    <span className="currency-prefix modal-currency-prefix">$</span>
                                     <input 
                                         type="number" 
                                         name="amount" 
@@ -352,35 +360,23 @@ function Transaction(){
                                     />
                                 </div>
                             </div>
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Type</label>
-                                <select 
-                                    name="type" 
-                                    value={modalData.type} 
-                                    onChange={handleModalChange}
-                                    style={{ width: '100%', height: '46px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: '#fff', borderRadius: '8px', padding: '0 12px' }}
-                                >
-                                    <option value="expense">Expense (Chi phí)</option>
-                                    <option value="income">Income (Thu nhập)</option>
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Category</label>
-                                <select 
-                                    name="category" 
-                                    value={modalData.category} 
-                                    onChange={handleModalChange}
-                                    style={{ width: '100%', height: '46px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: '#fff', borderRadius: '8px', padding: '0 12px' }}
-                                    required
-                                >
-                                    {filteredCategories.map(cat => (
-                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Date</label>
-                                <div className="input-wrapper">
+                            
+                            <div className="form-row" style={{ marginTop: '15px' }}>
+                                <div className="form-group">
+                                    <label>Category</label>
+                                    <select 
+                                        name="category" 
+                                        value={modalData.category} 
+                                        onChange={handleModalChange}
+                                        required
+                                    >
+                                        {filteredCategories.map(cat => (
+                                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Date</label>
                                     <input 
                                         type="date" 
                                         name="date" 
@@ -390,12 +386,24 @@ function Transaction(){
                                     />
                                 </div>
                             </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn-icon" style={{ width: 'auto', padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--glass-border)' }} onClick={() => setIsModalOpen(false)}>
+                            <div className="form-group" style={{ marginTop: '15px' }}>
+                                <label>Description</label>
+                                <input 
+                                    type="text" 
+                                    name="description" 
+                                    placeholder="e.g., Grocery Shopping" 
+                                    value={modalData.description}
+                                    onChange={handleModalChange}
+                                    required 
+                                />
+                            </div>
+                            
+                            <div className="modal-actions">
+                                <button type="button" className="btn btn-secondary-outline" onClick={() => setIsModalOpen(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="submit-btn" style={{ width: 'auto', marginTop: 0, padding: '10px 25px' }}>
-                                    {modalMode === 'add' ? 'Create' : 'Save Changes'}
+                                <button type="submit" className="btn btn-primary">
+                                    Save Transaction
                                 </button>
                             </div>
                         </form>

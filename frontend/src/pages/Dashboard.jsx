@@ -1,12 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import {useNavigate, Link} from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Scale, ArrowUpRight, ArrowDownRight, Trash2, ChevronRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import '../css/dashboard.css';
 
-const DONUT_COLORS = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const DONUT_COLORS = [
+  '#6366f1', '#3b82f6', '#10b981', '#f59e0b',
+  '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'
+];
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -14,6 +38,7 @@ function Dashboard() {
     const [recentTransactions, setRecentTransactions] = useState([]);
     const [cashflowData, setCashflowData] = useState([]);
     const [categoryData, setCategoryData] = useState([]);
+    const [inactiveCategories, setInactiveCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -82,30 +107,29 @@ function Dashboard() {
             .map(name => ({ name, value: expensesMap[name] }))
             .filter(item => item.value > 0);
         setCategoryData(formattedCategories);
+    }
 
-        // Function for quickly deleting transactions
-        const handleDeleteTransaction = async (id) => {
-            if(!window.confirm("Are you sure you want to delete this transactions?")) return;
+    // Function for quickly deleting transactions
+    const handleDeleteTransaction = async (id) => {
+        if(!window.confirm("Are you sure you want to delete this transactions?")) return;
 
-            try{
-                await api.delete(`/api/finance/transactions/${id}`);
-                toast.success("Transaction deleted successfully");
+        try{
+            await api.delete(`/api/finance/transactions/${id}`);
+            toast.success("Transaction deleted successfully");
 
-                // load data after delete
-                const [summaryRes, recentRes, allTransRes] = await Promise.all([
-                    api.get('/api/finance/summary'),
-                    api.get('/api/finance/transacction/recent'),
-                    api.get('/api/finance/transactions?pageSize=1000')
-                ]);
-                setSummary(summaryRes.data);
-                setRecentTransactions(recentRes.data);
-                processChartsData(allTransRes.data.data);
-            }catch (error){
-                console.error("Failed to delete transaction: ", error);
-                toast.error("Failed to delete transaction");
-            }
+            // load data after delete
+            const [summaryRes, recentRes, allTransRes] = await Promise.all([
+                api.get('/api/finance/summary'),
+                api.get('/api/finance/transactions/recent'),
+                api.get('/api/finance/transactions?pageSize=1000')
+            ]);
+            setSummary(summaryRes.data);
+            setRecentTransactions(recentRes.data);
+            processChartsData(allTransRes.data.data);
+        }catch (error){
+            console.error("Failed to delete transaction: ", error);
+            toast.error("Failed to delete transaction");
         }
-
     }
 
     // if (!summary) {
@@ -116,49 +140,71 @@ function Dashboard() {
     //     );
     // }
 
+    const formatNumber = (num) => {
+        const val = parseFloat(num) || 0;
+        return val.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    };
+
+    const formatNetBalance = (num) => {
+        const val = parseFloat(num) || 0;
+        const formatted = Math.abs(val).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        return val < 0 ? `-$${formatted}` : `$${formatted}`;
+    };
+
     return (
         <div className="dashboard-container">
-            <h2 className="dashboard-title">Financial Overview</h2>
+            <header className="header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '2.5rem' }}>
+                <div className="page-title">
+                    <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>Dashboard</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Welcome back! Check your financial summary.</p>
+                </div>
+                <div className="header-actions">
+                    <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/transactions')}>
+                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Add Transaction
+                    </button>
+                </div>
+            </header>
+            
             <section className="summary-grid">
                 {/* Card 1: Net Balance */}
-                <div className="glass-card summary-card">
-                    <div className="icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)' }}>
+                <div className="glass-card summary-card card-balance">
+                    <div className="icon-wrapper">
                         <Scale size={24} />
                     </div>
                     <div className="card-info">
                         <h3 className="card-title">Net Balance</h3>
-                        <p className="card-amount">${(summary?.balance ?? 0).toFixed(2)}</p>
+                        <p className="card-amount">{formatNetBalance(summary?.balance)}</p>
                     </div>
                 </div>
 
                 {/* Card 2: Total Income */}
-                <div className="glass-card summary-card">
-                    <div 
-                    className="icon-wrapper" 
-                    style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--color-income)' }}
-                    >
+                <div className="glass-card summary-card card-income">
+                    <div className="icon-wrapper">
                         <ArrowUpRight size={24} />
                     </div>
                     <div className="card-info">
                         <h3 className="card-title">Total Income</h3>
-                        <p className="card-amount" style={{ color: 'var(--color-income)' }}>
-                        +${(summary?.income ?? 0).toFixed(2)}
+                        <p className="card-amount">
+                        ${formatNumber(summary?.income)}
                         </p>
                     </div>
                 </div>
 
                 {/* Card 3: Total Expense */}
-                <div className="glass-card summary-card">
-                    <div 
-                    className="icon-wrapper" 
-                    style={{ background: 'rgba(239, 68, 68, 0.15)', color: 'var(--color-expense)' }}
-                    >
+                <div className="glass-card summary-card card-expense">
+                    <div className="icon-wrapper">
                         <ArrowDownRight size={24} />
                     </div>
                     <div className="card-info">
                         <h3 className="card-title">Total Expense</h3>
-                        <p className="card-amount" style={{ color: 'var(--color-expense)' }}>
-                        -${(summary?.expense ?? 0).toFixed(2)}
+                        <p className="card-amount">
+                        ${formatNumber(summary?.expense)}
                         </p>
                     </div>
                 </div>
@@ -170,16 +216,53 @@ function Dashboard() {
                 <div className='glass-card chart-container-card'>
                     <h3>Monthly Cash Flow</h3>
                     <div className='chart-wrapper'>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={cashflowData} margin={{top:10, right: 10, left: -20, bottom: 0}}>
-                                <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} tickLine={false} />
-                                <XAxis stroke="#9ca3af" fontSize={12} tickLine={false} />
-                                <tooltip contentStyle={{background: '#161929', border:'1px solid rgba(255,255,255,0.08', borderRadius: '8px', color:'#fff'}}/>
-                                <legend wrapperStyle={{fontSize: '12px', marginTop:'10px'}}/>
-                                <Bar dataKey="Income" fill="#10b981" radius={[4,4,0,0]}/>
-                                <Bar dataKey="Expense" fill='#ef4444' radius={[4,4,0,0]}/>
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <Bar 
+                            data={{
+                                labels: cashflowData.map(d => d.month),
+                                datasets: [
+                                    {
+                                        label: 'Income',
+                                        data: cashflowData.map(d => d.Income),
+                                        backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                                        borderRadius: 6,
+                                    },
+                                    {
+                                        label: 'Expense',
+                                        data: cashflowData.map(d => d.Expense),
+                                        backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                                        borderRadius: 6,
+                                    }
+                                ]
+                            }}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#9ca3af', font: { family: 'Outfit', size: 12 } }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (context) => `${context.dataset.label}: $${context.raw.toLocaleString()}`
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        ticks: { color: '#9ca3af', font: { family: 'Outfit', size: 12 } }
+                                    },
+                                    y: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        ticks: { 
+                                            color: '#9ca3af', 
+                                            font: { family: 'Outfit', size: 12 },
+                                            callback: (value) => value.toLocaleString()
+                                        }
+                                    }
+                                }
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -187,31 +270,56 @@ function Dashboard() {
                 <div className='glass-card chart-container-card'>
                     <h3>Expenses by Category</h3>
                     <div className='chart-wrapper'>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={categoryData.length > 0 ? categoryData : [{name: 'No Data', value: 1}]}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={55}
-                                    outerRadius={80}
-                                    paddingAngle={3}
-                                >
-                                    {categoryData.length > 0 ? (
-                                        categoryData.map((entry, index) => (
-                                            <Cell key={`cell=${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                                        ))
-                                    ) : (
-                                        <Cell fill="rgba(156,163,175,0.2)" />
-                                    )}
-                                </Pie>
-
-                                <Tooltip contentStyle={{background: '#161929', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff'}}/>
-                                <Legend layout='vertical' align="right" verticalAlign="middle" wrapperStyle={{fontSize: '12px'}}/>
-                            </PieChart>
-                        </ResponsiveContainer>
+                        {categoryData.length === 0 ? (
+                            <Doughnut
+                                data={{
+                                    labels: ['No Expense Data'],
+                                    datasets: [{ data: [1], backgroundColor: ['rgba(156, 163, 175, 0.2)'] }]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { 
+                                            position: 'right', 
+                                            labels: { color: '#9ca3af', font: { family: 'Outfit', size: 13 } } 
+                                        }
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <Doughnut
+                                data={{
+                                    labels: categoryData.map(c => c.name),
+                                    datasets: [{
+                                        data: categoryData.map(c => c.value),
+                                        backgroundColor: DONUT_COLORS.slice(0, categoryData.length),
+                                        borderWidth: 0
+                                    }]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { 
+                                            position: 'right', 
+                                            labels: { 
+                                                color: '#9ca3af', 
+                                                font: { family: 'Outfit', size: 13 },
+                                                usePointStyle: false,
+                                                boxWidth: 14,
+                                                padding: 14
+                                            } 
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (context) => ` $${context.raw.toLocaleString()}`
+                                            }
+                                        }
+                                    }
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             </section>
@@ -258,7 +366,7 @@ function Dashboard() {
                                             </td>
                                             <td>{dateStr}</td>
                                             <td className={isIncome ? 'amount-income' : 'amount-expense'}>
-                                                {isIncome ? '+' : '-'}${t.amount.toFixed(2)}
+                                                {isIncome ? '+' : '-'}${formatNumber(t.amount)}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
                                                 <button 
