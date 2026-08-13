@@ -41,6 +41,17 @@ function Dashboard() {
     const [inactiveCategories, setInactiveCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Lấy tháng (1-12) và năm hiện tại làm mặc định
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+
+    // State quản lý bộ lọc cho Pie Chart
+    const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+    const [selectedYear, setSelectedYear] = useState(currentYear);
+
+    // State lưu danh sách tất cả giao dịch để lọc lại khi người dùng đổi tháng/năm
+    const [allTransactions, setAllTransactions] = useState([]);
+
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -53,8 +64,12 @@ function Dashboard() {
                 setSummary(summaryRes.data);
                 setRecentTransactions(recentRes.data);
 
+                const transList = allTransRes.data.data || [];
+                setAllTransactions(transList);
+
                 // Process chart data
                 processChartsData(allTransRes.data.data);
+                updateCategoryChartData(transList, currentMonth, currentYear);
             }catch (error){
                 console.error("Error loading dashboard data: ", error);
                 toast.error("Failed to load financial overview");
@@ -109,6 +124,48 @@ function Dashboard() {
         setCategoryData(formattedCategories);
     }
 
+    const updateCategoryChartData = (transactionsList, month, year) => {
+        const expensesMap = {};
+
+        if(transactionsList && transactionsList.length > 0){
+            transactionsList.forEach(t => {
+                const tDate = new Date(t.date);
+                const tMonth = tDate.getMonth() + 1;
+                const tYear = tDate.getFullYear();
+
+                // Nếu chọn 'all', bỏ qua điều kiện tMonth
+                const isMonthMatch = month === 'all' || tMonth === Number(month);
+                const isYearMatch = tYear === Number(year);
+
+                if(t.type === 'expense' && isMonthMatch && isYearMatch){
+                    expensesMap[t.category] = (expensesMap[t.category] || 0) + t.amount;
+                }
+            });
+        }
+
+        const formattedCategories = Object.keys(expensesMap)
+            .map(name => ({name, value: expensesMap[name]}))
+            .filter(item => item.value > 0);
+        
+        setCategoryData(formattedCategories);
+    };
+
+    // Khi đổi Tháng hoặc Năm trên giao diện
+    const handleFilterChange = (newMonth, newYear) => {
+        setSelectedMonth(newMonth);
+        setSelectedYear(newYear);
+        updateCategoryChartData(allTransactions, newMonth, newYear);
+    };
+
+    // Khi bấm nút Reset -> đưa về Tháng/Năm hiện tại
+    const handleResetFilter = () => {
+        const nowM = new Date().getMonth() + 1;
+        const nowY = new Date().getFullYear();
+        setSelectedMonth(nowM);
+        setSelectedYear(nowY);
+        updateCategoryChartData(allTransactions, nowM, nowY);
+    };
+
     // Function for quickly deleting transactions
     const handleDeleteTransaction = async (id) => {
         if(!window.confirm("Are you sure you want to delete this transactions?")) return;
@@ -125,7 +182,10 @@ function Dashboard() {
             ]);
             setSummary(summaryRes.data);
             setRecentTransactions(recentRes.data);
+            const transList = allTransRes.data.data || [];
+            setAllTransactions(transList);
             processChartsData(allTransRes.data.data);
+            updateCategoryChartData(transList, selectedMonth, selectedYear);
         }catch (error){
             console.error("Failed to delete transaction: ", error);
             toast.error("Failed to delete transaction");
@@ -268,7 +328,42 @@ function Dashboard() {
 
                 {/* Pie chart for expense analysis */}
                 <div className='glass-card chart-container-card'>
-                    <h3>Expenses by Category</h3>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem'}}>
+                        <h3>Expenses by Category</h3>
+
+                        {/* Khung chứa các ô chọn lọc */}
+                        <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                            {/* Chọn tháng */}
+                            <select value={selectedMonth}
+                                onChange={(e) => handleFilterChange(e.target.value, selectedYear)}
+                                style={{background: '#161929', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem'}}>
+                                <option value="all">All Months</option>
+                                {Array.from({length: 12}, (_,i) => {
+                                    const monthName = new Date(2000, i, 1).toLocaleString('en-US', { month: 'short' });
+                                    return (
+                                        <option key={i + 1} value={i + 1}>{monthName}</option>
+                                    );
+                                })}
+                            </select>
+
+                            {/* Chọn Năm */}
+                            <select 
+                                value={selectedYear} 
+                                onChange={(e) => handleFilterChange(selectedMonth, e.target.value)}
+                                style={{ background: '#161929', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                                {[2024, 2025, 2026, 2027].map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+
+                            {/* Nút Reset */}
+                            <button 
+                                onClick={handleResetFilter}
+                                style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#6366f1', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                                Reset
+                            </button>
+                        </div>
+                    </div>
                     <div className='chart-wrapper'>
                         {categoryData.length === 0 ? (
                             <Doughnut
