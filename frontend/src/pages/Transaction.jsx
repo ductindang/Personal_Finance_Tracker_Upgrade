@@ -3,6 +3,7 @@ import api from '../services/api';
 import {Search, RotateCcw, ChevronLeft, ChevronRight, Edit2, Trash2, Plus, X} from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../css/transactions.css';
+import TransactionModal from '../pages/modals/TransactionModal.jsx';
 
 function Transaction(){
     // 1. STATE QUẢN LÝ DANH SÁCH VÀ PHÂN TRANG
@@ -22,15 +23,9 @@ function Transaction(){
 
     // 3. STATE CHO MODAL THÊM / SỬA
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState('add'); // add or edit
+    // const [modalMode, setModalMode] = useState('add'); // add or edit
     const [selectedTransactionId, setSelectedTransactionId] = useState(null);
-    const [modalData, setModalData] = useState ({
-        description: '',
-        amount: '',
-        type: 'expense',
-        category: '',
-        date: new Date().toISOString().substring(0, 10) // Mặc định ngày hôm nay
-    });
+    const [modalData, setModalData] = useState(null);
 
     // 4. LOAD DANH MỤC (CATEGORIES) ĐỂ FILL VÀO SELECCT OPTIONS
     useEffect(() => {
@@ -95,81 +90,16 @@ function Transaction(){
 
     // 7. MỞ MODAL ĐỂ THÊM GIAO DỊCH
     const openAddModal = () => {
-        setModalMode('add');
-        setSelectedTransactionId(null);
-        setModalData({
-            description: '',
-            amount: '',
-            type: 'expense',
-            category: categories.find(c => c.type === 'expense')?.name || '',
-            date: new Date().toISOString().substring(0, 10)
-        })
+        setModalData(null)
         setIsModalOpen(true);
     }
 
     // 8. MỞ MODAL ĐỂ SỬA GIAO DỊCH (lấy dữ liệu cũ đổ vào form)
     const openEditModal = (t) => {
-        setModalMode('edit');
-        setSelectedTransactionId(t.id);
-        setModalData({
-            description: t.description,
-            amount: t.amount,
-            type: t.type,
-            category: t.category,
-            date: t.date.substring(0, 10)
-        });
+        const formattedData = { ...t, date: t.date.substring(0, 10) };
+        setModalData(formattedData);
         setIsModalOpen(true);
     }
-
-    // Thay đổi trường dữ liệu trong Modal Form
-    const handleModalChange = (e) => {
-        const {name, value} = e.target;
-
-        setModalData(prev => {
-            const updated = {...prev, [name]: value};
-
-             // Nếu người dùng đổi loại (Type) từ Thu Nhập sang Chi Phí, tự động reset Category tương ứng
-            if(name === 'type'){
-                const firstMatchingCat = categories.find(c => c.type === value)?.name || '';
-                updated.category = firstMatchingCat;
-            }
-            return updated;
-        });
-    };
-
-    // Gửi form Thêm / Sửa lên backend
-    const handleModalSubmit = async (e) => {
-        e.preventDefault();
-
-        // Validate dữ liệu cơ bản
-        const amountNum = parseFloat(modalData.amount);
-        if(isNaN(amountNum) || amountNum <= 0){
-            toast.error("Amount must be a valid positive number");
-            return;
-        }
-
-        const payload = {
-            id: selectedTransactionId || 0,
-            description: modalData.description,
-            amount: amountNum,
-            type: modalData.type,
-            category: modalData.category,
-            date: new Date(modalData.date).toISOString()
-        };
-
-        try {
-            await api.post('/api/finance/transactions', payload);
-            toast.success(modalMode === 'add' ? "Transaction added successfully" : "Transaction updated successfully");
-            setIsModalOpen(false);
-            loadTransactions();
-        } catch (error) {
-            console.error("Save error:", error);
-            toast.error("Failed to save transaction.");
-        }
-    };
-
-    // Phân tách danh mục theo loại để hiển thị động trong dropdown Modal
-    const filteredCategories = categories.filter(c => c.type === modalData.type);
 
     // Tính toán số hiển thị phân trang
     const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -316,99 +246,11 @@ function Transaction(){
             </section>
             {/* D. DIALOG MODAL POPUP THÊM / SỬA GIAO DỊCH */}
             {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-card glass-card">
-                        <div className="modal-header">
-                            <h3>{modalMode === 'add' ? 'Add New Transaction' : 'Edit Transaction'}</h3>
-                            <button className="btn-close" onClick={() => setIsModalOpen(false)}>
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <form onSubmit={handleModalSubmit} className="modal-form">
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Transaction Type</label>
-                                <div className="toggle-switch-wrapper">
-                                    <button
-                                        type="button"
-                                        className={`toggle-btn ${modalData.type === 'expense' ? 'active-expense' : ''}`}
-                                        onClick={() => handleModalChange({ target: { name: 'type', value: 'expense' } })}
-                                    >
-                                        Expense
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`toggle-btn ${modalData.type === 'income' ? 'active-income' : ''}`}
-                                        onClick={() => handleModalChange({ target: { name: 'type', value: 'income' } })}
-                                    >
-                                        Income
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Amount</label>
-                                <div className="input-prefix-wrapper">
-                                    <span className="currency-prefix modal-currency-prefix">$</span>
-                                    <input 
-                                        type="number" 
-                                        name="amount" 
-                                        step="0.01" 
-                                        placeholder="0.00" 
-                                        value={modalData.amount}
-                                        onChange={handleModalChange}
-                                        required 
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div className="form-row" style={{ marginTop: '15px' }}>
-                                <div className="form-group">
-                                    <label>Category</label>
-                                    <select 
-                                        name="category" 
-                                        value={modalData.category} 
-                                        onChange={handleModalChange}
-                                        required
-                                    >
-                                        {filteredCategories.map(cat => (
-                                            <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Date</label>
-                                    <input 
-                                        type="date" 
-                                        name="date" 
-                                        value={modalData.date}
-                                        onChange={handleModalChange}
-                                        required 
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-group" style={{ marginTop: '15px' }}>
-                                <label>Description</label>
-                                <input 
-                                    type="text" 
-                                    name="description" 
-                                    placeholder="e.g., Grocery Shopping" 
-                                    value={modalData.description}
-                                    onChange={handleModalChange}
-                                    required 
-                                />
-                            </div>
-                            
-                            <div className="modal-actions">
-                                <button type="button" className="btn btn-secondary-outline" onClick={() => setIsModalOpen(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Save Transaction
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <TransactionModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSuccess={loadTransactions}
+                    initialData={modalData}/>
             )}
         </div>
     );

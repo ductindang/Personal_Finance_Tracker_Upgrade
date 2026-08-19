@@ -4,6 +4,7 @@ import api from '../services/api';
 import { Scale, ArrowUpRight, ArrowDownRight, Trash2, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../css/dashboard.css';
+import TransactionModal from './modals/TransactionModal';
 
 import {
   Chart as ChartJS,
@@ -40,6 +41,7 @@ function Dashboard() {
     const [categoryData, setCategoryData] = useState([]);
     const [inactiveCategories, setInactiveCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
     // Lấy tháng (1-12) và năm hiện tại làm mặc định
     const currentMonth = new Date().getMonth() + 1;
@@ -52,32 +54,32 @@ function Dashboard() {
     // State lưu danh sách tất cả giao dịch để lọc lại khi người dùng đổi tháng/năm
     const [allTransactions, setAllTransactions] = useState([]);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const [summaryRes, recentRes, allTransRes] = await Promise.all([
-                    api.get('/api/finance/summary'),
-                    api.get('/api/finance/transactions/recent'),
-                    api.get('/api/finance/transactions?pagesize=1000')
-                ]);
+    const fetchDashboardData = async () => {
+        try {
+            const [summaryRes, recentRes, allTransRes] = await Promise.all([
+                api.get('/api/finance/summary'),
+                api.get('/api/finance/transactions/recent'),
+                api.get('/api/finance/transactions?pagesize=1000')
+            ]);
 
-                setSummary(summaryRes.data);
-                setRecentTransactions(recentRes.data);
+            setSummary(summaryRes.data);
+            setRecentTransactions(recentRes.data);
 
-                const transList = allTransRes.data.data || [];
-                setAllTransactions(transList);
+            const transList = allTransRes.data.data || [];
+            setAllTransactions(transList);
 
-                // Process chart data
-                processChartsData(allTransRes.data.data);
-                updateCategoryChartData(transList, currentMonth, currentYear);
-            }catch (error){
-                console.error("Error loading dashboard data: ", error);
-                toast.error("Failed to load financial overview");
-            }finally {
-                setLoading(false);
-            }
+            // Process chart data
+            processChartsData(allTransRes.data.data);
+            updateCategoryChartData(transList, currentMonth, currentYear);
+        }catch (error){
+            console.error("Error loading dashboard data: ", error);
+            toast.error("Failed to load financial overview");
+        }finally {
+            setLoading(false);
         }
+    }
 
+    useEffect(() => {
         fetchDashboardData();
     }, []);
 
@@ -225,7 +227,7 @@ function Dashboard() {
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Welcome back! Check your financial summary.</p>
                 </div>
                 <div className="header-actions">
-                    <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/transactions')}>
+                    <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsTransactionModalOpen(true)}>
                         <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Add Transaction
                     </button>
                 </div>
@@ -480,7 +482,14 @@ function Dashboard() {
                     </table>
                 </div>
             </section>
-                
+            {isTransactionModalOpen && (
+                <TransactionModal 
+                    isOpen={isTransactionModalOpen}
+                    onClose={() => setIsTransactionModalOpen(false)}
+                    onSuccess={fetchDashboardData}
+                    initialData={null}
+                />
+            )}
         </div>
     );
 }
