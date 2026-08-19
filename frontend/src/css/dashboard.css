@@ -47,6 +47,29 @@
   color: var(--text-primary);
 }
 
+.summary-card.card-balance .icon-wrapper {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-color);
+}
+
+.summary-card.card-income .icon-wrapper {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-income);
+}
+
+.summary-card.card-expense .icon-wrapper {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-expense);
+}
+
+.summary-card.card-income .card-amount {
+  color: var(--text-primary) !important;
+}
+
+.summary-card.card-expense .card-amount {
+  color: var(--text-primary) !important;
+}
+
 /* Charts Layout - Xếp 2 biểu đồ song song tỷ lệ 2:1 */
 .charts-section {
   display: grid;
@@ -65,7 +88,7 @@
 /* Chiều cao của biểu đồ bắt buộc phải có để ResponsiveContainer không bị xẹp về 0px */
 .chart-wrapper {
   position: relative;
-  height: 280px;
+  height: 320px;
   width: 100%;
 }
 
@@ -94,7 +117,6 @@
 .transaction-table td {
   padding: 1.1rem 1.2rem;
   font-size: 0.95rem;
-  color: var(--text-primary);
   border-bottom: 1px solid var(--glass-border);
   transition: background-color 0.2s ease;
 }
@@ -172,6 +194,20 @@
 
 .btn-text:hover {
   text-decoration: underline;
+}
+
+/* Custom alignment for Recharts legend items */
+.recharts-legend-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px;
+  margin-bottom: 8px !important;
+  width: 100%;
+}
+
+.recharts-legend-item-text {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
 }
 
 /* Responsive */
