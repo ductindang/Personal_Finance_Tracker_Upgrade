@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import {PlusCircle, MinusCircle, Trash2, Info, X, PiggyBank} from 'lucide-react';
 import '../css/budgets.css';
 import TransactionModal from './modals/TransactionModal';
+import AlertModal from '../components/AlertModal'
 
 function Budgets() {
   // Lấy tháng hiện tại định dạng YYYY-MM (ví dụ: 2026-08)
@@ -22,6 +23,13 @@ function Budgets() {
     category: '',
     limitAmount: '',
     month: currentMonthISO
+  });
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    idToDelete: null
   });
 
   // fetch ngân sách theo tháng
@@ -86,17 +94,38 @@ function Budgets() {
     }
   };
 
-  // Delete budget limit
-  const handleDeleteBudget = async (id) => {
-    if(!window.confirm("Are you sure you want to delete this Budget")) return;
+  const triggerDelete = (id) => {
+    setAlert({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Confirm Delete',
+      message: 'Are you sure you want to delete this budget limit?',
+      idToDelete: id
+    })
+  }
 
+  const confirmDelete = async () => {
+    const id = alert.idToDelete;
     try{
       await api.delete(`/api/finance/budgets/${id}`);
-      toast.success("Budget deleted successfully");
+      setAlert({
+        isOpen: true,
+        type: 'success',
+        title: 'Deleted',
+        message: 'Budget deleted successfully!',
+        idToDelete: null
+      });
+
       fetchBudgets(selectedMonth);
     }catch(error){
       console.error("Delete error: ", error);
-      toast.error("Failed to delete budget");
+      setAlert({
+          isOpen: true,
+          type: 'danger',
+          title: 'Error',
+          message: 'Failed to delete budget limit.',
+          idToDelete: null
+      });
     }
   }
 
@@ -184,7 +213,7 @@ function Budgets() {
                   <button
                     className="btn-icon delete-btn"
                     title="Delete Budget limit"
-                    onClick={() => handleDeleteBudget(b.id)}>
+                    onClick={() => triggerDelete(b.id)}>
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -268,10 +297,20 @@ function Budgets() {
                     isOpen={isTransactionModalOpen}
                     onClose={() => setIsTransactionModalOpen(false)}
                     onSuccess={() => {
-                      fetchBugets(selectedMonth);
+                      fetchBudgets(selectedMonth);
                       fetchExpenseCategories();}}
                     initialData={null}/>
       )}
+      <AlertModal 
+        isOpen={alert.isOpen}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        
+        // Nếu là popup xác nhận thì hàm OK là confirmDelete, nếu là popup báo thành công/lỗi thì hàm OK chỉ đơn giản là đóng popup
+        onConfirm={alert.type === 'confirm' ? confirmDelete : () => setAlert({ ...alert, isOpen: false })}
+        onCancel={() => setAlert({ ...alert, isOpen: false })}
+      />
     </div>
   );
 }

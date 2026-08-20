@@ -4,6 +4,7 @@ import {Search, RotateCcw, ChevronLeft, ChevronRight, Edit2, Trash2, Plus, X} fr
 import toast from 'react-hot-toast';
 import '../css/transactions.css';
 import TransactionModal from '../pages/modals/TransactionModal.jsx';
+import AlertModal from '../components/AlertModal.jsx';
 
 function Transaction(){
     // 1. STATE QUẢN LÝ DANH SÁCH VÀ PHÂN TRANG
@@ -27,6 +28,15 @@ function Transaction(){
     const [selectedTransactionId, setSelectedTransactionId] = useState(null);
     const [modalData, setModalData] = useState(null);
 
+    // State cho alert popup
+    const [alert, setAlert] = useState({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: '',
+        idToDelete: null
+    });
+
     // 4. LOAD DANH MỤC (CATEGORIES) ĐỂ FILL VÀO SELECCT OPTIONS
     useEffect(() => {
         api.get('/api/finance/categories').then(res => {
@@ -37,7 +47,7 @@ function Transaction(){
     // 5. HÀM TẢI DANH SÁCH GIAO DỊCH (có áp dụng bộ lọc và phân trang)
     const loadTransactions = useCallback(async () => {
         try{
-            const queryUrl = `/api/finance/transactions?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}&type=${filterType}&category=${filterCategory}&dateFrom${dateFrom}&dateTo${dateTo}`;
+            const queryUrl = `/api/finance/transactions?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}&type=${filterType}&category=${encodeURIComponent(filterCategory)}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
             const response = await api.get(queryUrl);
             setTransactions(response.data.data);
             setTotal(response.data.total);
@@ -74,17 +84,38 @@ function Transaction(){
         setPage(1);
     }
 
-    // 6. XỬ LÝ XÓA GIAO DỊCH
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this transaction?")) return;
+    const triggerDelete = (id) => {
+        setAlert({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Delete Transaction',
+            message: 'Are you sure you want to delete this transaction?',
+            idToDelete: id
+        })
+    }
 
+    const confirmDelete = async() => {
+        const id = alert.idToDelete;
         try{
             await api.delete(`/api/finance/transactions/${id}`);
-            toast.success("Transaction deleted successfully");
+            setAlert({
+                isOpen: true,
+                type: 'success',
+                title: 'Deleted',
+                message: 'Transaction deleted successfully',
+                idToDelete: null
+            })
+
             loadTransactions();
         }catch(error){
-            console.error("Delete error: ", error);
-            toast.error("Failed to delete transaction");
+            console.error('Delete error: ', error);
+            setAlert({
+                isOpen: true,
+                type: 'danger',
+                title: 'Error',
+                message: 'Failed to delete transaction.',
+                idToDelete: null
+            });
         }
     }
 
@@ -206,7 +237,7 @@ function Transaction(){
                                                     <button className="btn-icon edit-btn" onClick={() => openEditModal(t)} title="Edit">
                                                         <Edit2 size={16} />
                                                     </button>
-                                                    <button className="btn-icon delete-btn" onClick={() => handleDelete(t.id)} title="Delete">
+                                                    <button className="btn-icon delete-btn" onClick={() => triggerDelete(t.id)} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
@@ -252,6 +283,14 @@ function Transaction(){
                     onSuccess={loadTransactions}
                     initialData={modalData}/>
             )}
+
+            <AlertModal 
+                isOpen={alert.isOpen}
+                type={alert.type}
+                title={alert.title}
+                message={alert.message}
+                onConfirm={alert.type === 'confirm' ? confirmDelete : () => setAlert({ ...alert, isOpen: false })}
+                onCancel={() => setAlert({...alert, isOpen: false})}/>
         </div>
     );
 }
