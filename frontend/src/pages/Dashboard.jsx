@@ -17,6 +17,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import AlertModal from '../components/AlertModal';
 
 ChartJS.register(
   CategoryScale,
@@ -53,6 +54,15 @@ function Dashboard() {
 
     // State lưu danh sách tất cả giao dịch để lọc lại khi người dùng đổi tháng/năm
     const [allTransactions, setAllTransactions] = useState([]);
+
+    // State alert
+    const [alert, setAlert] = useState({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: '',
+        idToDelete: null
+    })
 
     const fetchDashboardData = async () => {
         try {
@@ -168,31 +178,41 @@ function Dashboard() {
         updateCategoryChartData(allTransactions, nowM, nowY);
     };
 
-    // Function for quickly deleting transactions
-    const handleDeleteTransaction = async (id) => {
-        if(!window.confirm("Are you sure you want to delete this transactions?")) return;
+    const triggerDelete = (id) => {
+        setAlert({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Confirm Delete',
+            message: 'Are you sure you want to delete this transaction?',
+            idToDelete: id
+        })
+    }
 
+    const confirmDelete = async() =>{
+        const id = alert.idToDelete;
         try{
             await api.delete(`/api/finance/transactions/${id}`);
-            toast.success("Transaction deleted successfully");
+            setAlert({
+                isOpen: true,
+                type: 'success',
+                title: 'Deleted',
+                messaage: 'Transaction deleted successfully!',
+                idToDelete: null
+            });
+            fetchDashboardData();
 
-            // load data after delete
-            const [summaryRes, recentRes, allTransRes] = await Promise.all([
-                api.get('/api/finance/summary'),
-                api.get('/api/finance/transactions/recent'),
-                api.get('/api/finance/transactions?pageSize=1000')
-            ]);
-            setSummary(summaryRes.data);
-            setRecentTransactions(recentRes.data);
-            const transList = allTransRes.data.data || [];
-            setAllTransactions(transList);
-            processChartsData(allTransRes.data.data);
-            updateCategoryChartData(transList, selectedMonth, selectedYear);
-        }catch (error){
-            console.error("Failed to delete transaction: ", error);
-            toast.error("Failed to delete transaction");
+        }catch(error){
+            console.error('Delete error: ', error);
+            setAlert({
+                isOpen: true,
+                type: 'danger',
+                title: 'Error',
+                message: 'Failed to delete transaction.',
+                idToDelete: null
+            });
         }
     }
+
 
     // if (!summary) {
     //     return (
@@ -469,7 +489,7 @@ function Dashboard() {
                                                 <button 
                                                     className="btn-icon delete-btn" 
                                                     title="Delete" 
-                                                    onClick={() => handleDeleteTransaction(t.id)}
+                                                    onClick={() => triggerDelete(t.id)}
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
@@ -490,6 +510,14 @@ function Dashboard() {
                     initialData={null}
                 />
             )}
+            <AlertModal 
+                isOpen={alert.isOpen}
+                type={alert.type}
+                title={alert.title}
+                message={alert.message}
+                onConfirm={alert.type === 'confirm' ? confirmDelete : () => setAlert({...alert, isOpen: false})}
+                onCancel={() => setAlert({...alert, isOpen: false})}
+            />
         </div>
     );
 }

@@ -30,8 +30,25 @@ public class SavingsService : ISavingsService
             return (false, "Invalid goal payload.", null);
         }
 
+        if (model.CurrentAmount < 0)
+        {
+            return (false, "Current amount cannot be negative.", null);
+        }
+
+        // 1. Tính toán số dư khả dụng trong ví chính
+        var income = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "income");
+        var expense = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "expense");
+        var savings = await _savingsGoalRepository.GetTotalSavingsAsync(userId);
+        var spendableBalance = income - expense - savings;
+
         if (model.Id == 0)
         {
+            // 2. Nếu tạo mới và có nhập số tiền nạp ban đầu (Initial Savings > 0)
+            if (model.CurrentAmount > 0 && spendableBalance < model.CurrentAmount)
+            {
+                return (false, "Insufficient spendable balance for initial savings.", null);
+            }
+
             model.UserId = userId;
             await _savingsGoalRepository.AddAsync(model);
         }
@@ -41,6 +58,13 @@ public class SavingsService : ISavingsService
             if (existing == null || existing.UserId != userId)
             {
                 return (false, "Savings goal not found.", null);
+            }
+
+            // 3. Nếu sửa mà tăng thêm tiền vào mục tiêu thì kiểm tra phần tiền tăng thêm
+            var additionalAmount = model.CurrentAmount - existing.CurrentAmount;
+            if (additionalAmount > 0 && spendableBalance < additionalAmount)
+            {
+                return (false, "Insufficient spendable balance to increase savings amount.", null);
             }
 
             existing.Title = model.Title;
