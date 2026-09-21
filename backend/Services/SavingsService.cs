@@ -36,8 +36,7 @@ public class SavingsService : ISavingsService
         }
 
         // 1. Tính toán số dư khả dụng trong ví chính
-        var income = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "income");
-        var expense = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "expense");
+        var (income, expense) = await _transactionRepository.GetIncomeAndExpenseTotalsAsync(userId);
         var savings = await _savingsGoalRepository.GetTotalSavingsAsync(userId);
         var spendableBalance = income - expense - savings;
 
@@ -108,8 +107,7 @@ public class SavingsService : ISavingsService
         if (type == "deposit")
         {
             // Check if spendable balance is sufficient
-            var income = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "income");
-            var expense = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "expense");
+            var (income, expense) = await _transactionRepository.GetIncomeAndExpenseTotalsAsync(userId);
             var savings = await _savingsGoalRepository.GetTotalSavingsAsync(userId);
             var spendableBalance = income - expense - savings;
 

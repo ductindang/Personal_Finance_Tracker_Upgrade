@@ -114,6 +114,20 @@ public class TransactionRepository : ITransactionRepository
             .SumAsync(t => t.Amount);
     }
 
+    public async Task<(decimal Income, decimal Expense)> GetIncomeAndExpenseTotalsAsync(int userId)
+    {
+        var totals = await _context.Transactions
+            .Where(t => t.UserId == userId && (t.Type == "income" || t.Type == "expense"))
+            .GroupBy(t => t.Type)
+            .Select(g => new { Type = g.Key, Total = g.Sum(t => t.Amount) })
+            .ToListAsync();
+
+        var income = totals.FirstOrDefault(t => t.Type == "income")?.Total ?? 0m;
+        var expense = totals.FirstOrDefault(t => t.Type == "expense")?.Total ?? 0m;
+
+        return (income, expense);
+    }
+
     public async Task<Dictionary<string, decimal>> GetExpensesByCategoryAsync(int userId, DateTime startDate, DateTime endDate)
     {
         var expenses = await _context.Transactions

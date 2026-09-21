@@ -196,7 +196,7 @@ function Dashboard() {
                 isOpen: true,
                 type: 'success',
                 title: 'Deleted',
-                messaage: 'Transaction deleted successfully!',
+                message: 'Transaction deleted successfully!',
                 idToDelete: null
             });
             fetchDashboardData();

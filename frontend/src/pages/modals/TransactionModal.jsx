@@ -21,8 +21,6 @@ function TransactionModal({isOpen, onClose, onSuccess, initialData}){
 
     useEffect(() => {
         if(isOpen){
-            api.get('/api/finance/categories').then(res => setCategories(res.data));
-
             if(initialData){
                 setModalData(initialData);
             }else{
@@ -34,6 +32,25 @@ function TransactionModal({isOpen, onClose, onSuccess, initialData}){
                     date: new Date().toISOString().substring(0, 10)
                 });
             }
+
+            api.get('/api/finance/categories')
+                .then(res => {
+                    const fetchedCategories = res.data || [];
+                    setCategories(fetchedCategories);
+                    // Nếu là tạo mới (không có initialData), gán category đầu tiên khớp với type hiện tại
+                    if (!initialData) {
+                        setModalData(prev => {
+                            const defaultCat = fetchedCategories.find(c => c.type === prev.type)?.name || '';
+                            return {
+                                ...prev,
+                                category: defaultCat
+                            };
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load categories:", err);
+                });
         }
     }, [initialData, isOpen]);
 
@@ -58,6 +75,11 @@ function TransactionModal({isOpen, onClose, onSuccess, initialData}){
         const amountNum = parseFloat(modalData.amount);
         if(isNaN(amountNum) || amountNum <= 0){
             toast.error("Amount must be a valid positive number");
+            return;
+        }
+
+        if (!modalData.category) {
+            toast.error("Please select a category");
             return;
         }
         

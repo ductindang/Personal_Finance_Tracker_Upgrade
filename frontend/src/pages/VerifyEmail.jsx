@@ -55,7 +55,7 @@ function VerifyEmail() {
             if(response.data.success){
                 toast.success('Email verified successfully! Redirecting to login');
                 setTimeout(() => {
-                    navigate('login');
+                    navigate('/login');
                 }, 2000);
             }else{
                 if(response.data.errors){
@@ -95,9 +95,9 @@ function VerifyEmail() {
         }catch(error){
             console.error('Resend error: ', error);
             if (error.response?.data?.errors) {
-                setErrorMessage(error.response.data.errors.join(' '));
+                toast.error(error.response.data.errors.join(' '));
             } else {
-                setErrorMessage('Failed to resend code. Please try again.');
+                toast.error('Failed to resend code. Please try again.');
             }
         }finally{
             setLoading(false);

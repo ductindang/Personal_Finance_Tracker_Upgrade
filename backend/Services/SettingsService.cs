@@ -30,8 +30,7 @@ public class SettingsService : ISettingsService
 
     public async Task<FinancialSummaryDto> GetFinancialSummaryAsync(int userId)
     {
-        var income = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "income");
-        var expense = await _transactionRepository.GetTotalAmountByTypeAsync(userId, "expense");
+        var (income, expense) = await _transactionRepository.GetIncomeAndExpenseTotalsAsync(userId);
         var savings = await _savingsGoalRepository.GetTotalSavingsAsync(userId);
         var balance = income - expense - savings;
 

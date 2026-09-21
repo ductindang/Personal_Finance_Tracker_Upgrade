@@ -1,9 +1,10 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using PersonalFinanceTracker.Models;
 using PersonalFinanceTracker.Repositories.Interfaces;
 using PersonalFinanceTracker.Services.Interfaces;
+using System;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace PersonalFinanceTracker.Services;
 
@@ -36,8 +37,7 @@ public class AccountService : IAccountService
             return (false, "Username is already taken.");
         }
 
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
         var user = new User
         {

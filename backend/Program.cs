@@ -25,6 +25,19 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Application Insight config for azure
+var aiConfig = builder.Configuration.GetSection("ApplicationInsights").Get<ApplicationInsightSettings>();
+
+// Register IOption to inject into Services
+builder.Services.Configure<ApplicationInsightSettings>(builder.Configuration.GetSection("ApplicationInsights"));
+if(aiConfig != null && aiConfig.IsUseApplicationInsights && !string.IsNullOrEmpty(aiConfig.ConnectionString)){
+    builder.Services.AddApplicationInsightsTelemetry(options =>
+    {
+        options.ConnectionString = aiConfig.ConnectionString;
+        options.EnableDependencyTrackingTelemetryModule = aiConfig.EnableDependencyTracking;
+    });
+}
+
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

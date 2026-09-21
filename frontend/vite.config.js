@@ -9,14 +9,16 @@ export default defineConfig({
       // Chuyển tiếp các request gọi API (/api/...) sang cổng 5051
       // Chuyển tiếp các request gọi API
       '/api': {
-        target: 'http://localhost:5051',
+        target: 'https://personal.finance.backend.com.vn',
+        // target: 'http://localhost:5051',
         changeOrigin: true,
         secure: false,
       },
       // Chuyển tiếp các request gọi Account (/Account/...) sang cổng 5051
       // Chuyển tiếp các request gọi Account (Login Google, Logout,...)
       '/Account': {
-        target: 'http://localhost:5051',
+        target: 'https://personal.finance.backend.com.vn',
+        // target: 'http://localhost:5051',
         changeOrigin: true,
         secure: false,
       }

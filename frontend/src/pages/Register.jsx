@@ -66,12 +66,11 @@ function Register() {
     e.preventDefault();
     setLoading(true);
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match.');
-      return;
-    }
-
     try {
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match.');
+        return;
+      }
       const response = await api.post('/Account/Register', formData);
       
       if (response.data.success) {

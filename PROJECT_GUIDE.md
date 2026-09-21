@@ -47,6 +47,7 @@ graph TD
 ### 3. Data Access Layer (Repositories & EF Core)
 - **Database Interaction**: Encapsulated within classes implementing repository interfaces. Direct query logic (LINQ queries, SQL executes) should be restricted here.
 - **Materialization**: Force LINQ execution by calling `.ToListAsync()` or `.FirstOrDefaultAsync()` before returning results to Services to avoid leaving database tracking/connections open.
+- **Query Aggregation**: Use grouped aggregation queries (e.g., `GetIncomeAndExpenseTotalsAsync` in `ITransactionRepository`) to retrieve multiple aggregate metrics (income, expense) in a single database round-trip rather than multiple sequential database calls.
 
 ---
 
@@ -313,9 +314,18 @@ dotnet tool restore
 dotnet ef database update
 ```
 
-### 2. Run Command
+### 2. Monitoring & APM (Azure Application Insights)
+The backend is integrated with **Azure Application Insights** for telemetry, live performance metrics, request tracing, and exception tracking.
+- **Model**: `ApplicationInsightSettings` (`IsUseApplicationInsights`, `ConnectionString`, `EnableDependencyTracking`, `UseInSignUp`).
+- **Configuration**: Mapped from the `"ApplicationInsights"` section in `appsettings.json`.
+- **Registration**: Registered in `Program.cs` via `builder.Services.AddApplicationInsightsTelemetry(...)`.
+- **Live Metrics**: Real-time telemetry, request tracing, and dependency tracking viewable in Azure Portal.
+
+### 3. Run Command
 Run the application using:
 ```powershell
 dotnet run
 ```
 And navigate to the printed ports.
+
+
