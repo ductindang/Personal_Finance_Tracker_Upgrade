@@ -85,12 +85,25 @@ function Register() {
           toast.error('Registration failed.');
         }
       }
-    } catch (error) {
+        } catch (error) {
       console.error('Registration error:', error);
       if (error.response?.data?.errors) {
-        toast.error(error.response.data.errors.join(' '));
+        const errs = error.response.data.errors;
+        // 1. Trường hợp là Object (lỗi Validation từ ASP.NET Core: { Email: [...], Password: [...] })
+        if (typeof errs === 'object' && !Array.isArray(errs)) {
+          const message = Object.values(errs).flat().join(' ');
+          toast.error(message);
+        } 
+        // 2. Trường hợp là Mảng chuỗi: ["Lỗi 1", "Lỗi 2"]
+        else if (Array.isArray(errs)) {
+          toast.error(errs.join(' '));
+        } 
+        // 3. Trường hợp là một chuỗi đơn lẻ
+        else {
+          toast.error(errs);
+        }
       } else {
-        toast.error('An unexpected error occurred. Please try again.');
+        toast.error(error.response?.data?.message || error.response?.data?.title || 'An unexpected error occurred. Please try again.');
       }
     }finally{
       setLoading(false);

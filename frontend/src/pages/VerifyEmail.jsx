@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
+import {useNavigate, useSearchParams, Link} from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react'; 
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import '../css/auth.css';
@@ -141,7 +142,6 @@ function VerifyEmail() {
                                 />
                             </div>
                         </div>
-
                         <button type='submit' className='submit-btn' disabled={loading}>
                             {loading ? 'Verifying...' : 'Verify Account'}
                         </button>
@@ -170,9 +170,12 @@ function VerifyEmail() {
                                     Resend Code
                                 </button>
                             </>
-                            
                         }
-                        
+                        <div className="register-link-wrapper" style={{ marginTop: '24px' }}>
+                            <Link to="/login" className="register-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <ArrowLeft size={16} /> Back to Sign in
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

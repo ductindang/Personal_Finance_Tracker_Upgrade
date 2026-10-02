@@ -7,8 +7,10 @@ import TransactionModal from './modals/TransactionModal';
 import AlertModal from '../components/AlertModal';
 import SavingModal from './modals/SavingModal';
 import SavingsFundModal from './modals/SavingsFundModal';
+import { useCurrency } from '../context/CurrencyContext';
 
 function Savings() {
+  const { currency } = useCurrency();
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
 
@@ -50,7 +52,7 @@ function Savings() {
   }, []);
 
   const formatCurrency = (value) => {
-    return "$" + parseFloat(value).toFixed(2);
+    return currency + parseFloat(value).toFixed(2);
   };
 
   const [fundTypeToOpen, setFundTypeToOpen] = useState('deposit');

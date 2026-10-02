@@ -4,9 +4,11 @@ import toast from 'react-hot-toast';
 import {PlusCircle, MinusCircle, Trash2, Info, X, PiggyBank} from 'lucide-react';
 import '../css/budgets.css';
 import TransactionModal from './modals/TransactionModal';
-import AlertModal from '../components/AlertModal'
+import AlertModal from '../components/AlertModal';
+import { useCurrency } from '../context/CurrencyContext';
 
 function Budgets() {
+  const { currency } = useCurrency();
   // Lấy tháng hiện tại định dạng YYYY-MM (ví dụ: 2026-08)
   const currentMonthISO = new Date().toISOString().substring(0, 7);
 
@@ -222,8 +224,8 @@ function Budgets() {
                     <div className={`progress-fill ${progressClass}`} style={{ width: `${progressFillWidth}%` }}></div>
                   </div>
                   <div className="budget-amounts">
-                    <span className="budget-spent">${spent.toLocaleString()}</span>
-                    <span className="budget-limit">of ${limit.toLocaleString()}</span>
+                    <span className="budget-spent">{currency}{spent.toLocaleString()}</span>
+                    <span className="budget-limit">of {currency}{limit.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -258,7 +260,7 @@ function Budgets() {
               <div className='form-group'>
                 <label>Monthly limit</label>
                 <div className="input-prefix-wrapper">
-                  <span className="currency-prefix">$</span>
+                  <span className="currency-prefix">{currency}</span>
                   <input
                     type="number"
                     step="0.01"

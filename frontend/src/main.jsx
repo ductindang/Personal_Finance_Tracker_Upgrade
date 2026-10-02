@@ -2,11 +2,14 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { CurrencyProvider } from './context/CurrencyContext.jsx'
 // Create root will find element <div id="root"></div> in index.html
 // and render to component <App /> in to it
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <CurrencyProvider>
+      <App />
+    </CurrencyProvider>
   </StrictMode>,
 )

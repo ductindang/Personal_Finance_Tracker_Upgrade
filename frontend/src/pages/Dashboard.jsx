@@ -5,6 +5,7 @@ import { Scale, ArrowUpRight, ArrowDownRight, Trash2, ChevronRight } from 'lucid
 import toast from 'react-hot-toast';
 import '../css/dashboard.css';
 import TransactionModal from './modals/TransactionModal';
+import { useCurrency } from '../context/CurrencyContext';
 
 import {
   Chart as ChartJS,
@@ -36,6 +37,7 @@ const DONUT_COLORS = [
 
 function Dashboard() {
     const navigate = useNavigate();
+    const { currency } = useCurrency();
     const [summary, setSummary] = useState(null);
     const [recentTransactions, setRecentTransactions] = useState([]);
     const [cashflowData, setCashflowData] = useState([]);
@@ -236,7 +238,7 @@ function Dashboard() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
-        return val < 0 ? `-$${formatted}` : `$${formatted}`;
+        return val < 0 ? `-${currency}${formatted}` : `${currency}${formatted}`;
     };
 
     return (
@@ -273,7 +275,7 @@ function Dashboard() {
                     <div className="card-info">
                         <h3 className="card-title">Total Income</h3>
                         <p className="card-amount">
-                        ${formatNumber(summary?.income)}
+                        {currency}{formatNumber(summary?.income)}
                         </p>
                     </div>
                 </div>
@@ -286,7 +288,7 @@ function Dashboard() {
                     <div className="card-info">
                         <h3 className="card-title">Total Expense</h3>
                         <p className="card-amount">
-                        ${formatNumber(summary?.expense)}
+                        {currency}{formatNumber(summary?.expense)}
                         </p>
                     </div>
                 </div>
@@ -325,7 +327,7 @@ function Dashboard() {
                                     },
                                     tooltip: {
                                         callbacks: {
-                                            label: (context) => `${context.dataset.label}: $${context.raw.toLocaleString()}`
+                                            label: (context) => `${context.dataset.label}: ${currency}${context.raw.toLocaleString()}`
                                         }
                                     }
                                 },
@@ -430,7 +432,7 @@ function Dashboard() {
                                         },
                                         tooltip: {
                                             callbacks: {
-                                                label: (context) => ` $${context.raw.toLocaleString()}`
+                                                label: (context) => ` ${currency}${context.raw.toLocaleString()}`
                                             }
                                         }
                                     }
@@ -483,7 +485,7 @@ function Dashboard() {
                                             </td>
                                             <td>{dateStr}</td>
                                             <td className={isIncome ? 'amount-income' : 'amount-expense'}>
-                                                {isIncome ? '+' : '-'}${formatNumber(t.amount)}
+                                                {isIncome ? '+' : '-'}{currency}{formatNumber(t.amount)}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
                                                 <button 

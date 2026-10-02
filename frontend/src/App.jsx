@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
 
 // ====================================================
 // MIDDLEWARE GATE: Chịu trách nhiệm phân luồng toàn bộ úng dụng
@@ -26,7 +27,7 @@ function AppContent() {
 
   // Danh sách các đường dẫn của trang Đăng nhập / Đăng ký
   // (Lưu ý: nên gõ chính xác '/register' có dấu gạch chéo ở trước nhé)
-  const authPaths = ['/login', '/register', '/verify-email'];
+  const authPaths = ['/login', '/register', '/verify-email', '/forgot-password'];
   const isAuthPage = authPaths.includes(location.pathname);
 
   // 1. Trong lúc hệ thống đang gửi API kiểm tra Session (Loading)
@@ -52,6 +53,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail/>}/>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     );
   }

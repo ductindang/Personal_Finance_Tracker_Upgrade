@@ -41,6 +41,13 @@ if(aiConfig != null && aiConfig.IsUseApplicationInsights && !string.IsNullOrEmpt
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Register Authentication Services
 builder.Services.AddAuthentication(options =>
 {
@@ -66,13 +73,23 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.HttpOnly = true;
 })
-.AddCookie("ExternalCookie")
+.AddCookie("ExternalCookie", options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+})
 .AddGoogle(options =>
 {
     options.SignInScheme = "ExternalCookie";
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "MOCK_CLIENT_ID";
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "MOCK_CLIENT_SECRET";
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
     options.ClaimActions.MapJsonKey("picture", "picture");
+
+    // BẮT BUỘC: Để Chrome chấp nhận cookie khi Google redirect về IIS
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.CorrelationCookie.HttpOnly = true;
+    options.CorrelationCookie.IsEssential = true;
 });
 
 // Register Repositories
@@ -100,6 +117,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.Use((context, next) =>
+{
+    context.Request.Scheme = "https";
+    return next();
+});
+app.UseForwardedHeaders();
+
+app.Use((context, next) =>
+{
+    // Nếu request đến qua https hoặc qua IIS HTTPS header
+    if (context.Request.Headers["X-Forwarded-Proto"] == "https" || context.Request.IsHttps)
+    {
+        context.Request.Scheme = "https";
+    }
+    return next();
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -80,6 +80,7 @@ function Login() {
       setLoading(false);
     }
   };
+  const backendUrl = api.defaults.baseURL || '';
 
   return (
     <div className="auth-body-wrapper">
@@ -165,7 +166,7 @@ function Login() {
 
           {/* Social Logins */}
           <div className="social-login-row">
-            <a href="http://localhost:5051/Account/ExternalLogin?provider=Google" className="social-icon-btn google-btn" title="Sign in with Google">
+            <a href={`${backendUrl}/Account/ExternalLogin?provider=Google`}  className="social-icon-btn google-btn" title="Sign in with Google">
               <i className="fa-brands fa-google google-icon"></i>
             </a>
             <a href="#" className="social-icon-btn github-btn" title="Sign in with GitHub">

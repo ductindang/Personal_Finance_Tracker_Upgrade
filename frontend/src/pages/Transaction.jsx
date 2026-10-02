@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import '../css/transactions.css';
 import TransactionModal from '../pages/modals/TransactionModal.jsx';
 import AlertModal from '../components/AlertModal.jsx';
+import { useCurrency } from '../context/CurrencyContext';
 
 function Transaction(){
+    const { currency } = useCurrency();
     // 1. STATE QUẢN LÝ DANH SÁCH VÀ PHÂN TRANG
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -230,7 +232,7 @@ function Transaction(){
                                             </td>
                                             <td>{dateStr}</td>
                                             <td className={isIncome ? 'amount-income' : 'amount-expense'}>
-                                                {isIncome ? '+' : '-'}${t.amount.toFixed(2)}
+                                                {isIncome ? '+' : '-'}{currency}{t.amount.toFixed(2)}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
                                                 <div className="row-actions" style={{ justifyContent: 'center' }}>

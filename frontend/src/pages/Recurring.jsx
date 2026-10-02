@@ -5,8 +5,10 @@ import {Plus, Edit2, Trash2, RefreshCw, TrendingUp, TrendingDown} from 'lucide-r
 import RecurringModal from './modals/RecurringModal';
 import '../css/recurring.css';
 import AlertModal from '../components/AlertModal.jsx';
+import { useCurrency } from '../context/CurrencyContext';
 
 function Recurring() {
+  const { currency } = useCurrency();
   const [recurrings, setRecurrings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
@@ -165,7 +167,7 @@ function Recurring() {
                   </div>
               </div>
               <div className="recurring-metric-value income">
-                  ${totalInflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currency}{totalInflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
           </div>
           {/* Monthly Est. Outflow */}
@@ -177,7 +179,7 @@ function Recurring() {
                   </div>
               </div>
               <div className="recurring-metric-value expense">
-                  ${totalOutflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currency}{totalOutflow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
           </div>
       </div>
@@ -231,7 +233,7 @@ function Recurring() {
                         <span className='frequency-pill'>{rec.frequency}</span>
                       </td>
                       <td className={isIncome ? 'amount-income' : 'amount-expense'}>
-                        {isIncome ? '+' : '-'}${rec.amount.toFixed(2)}
+                        {isIncome ? '+' : '-'}{currency}{rec.amount.toFixed(2)}
                       </td>
                       <td>{formatNextRun(rec.nextOccurrence, rec.isActive)}</td>
                       <td>

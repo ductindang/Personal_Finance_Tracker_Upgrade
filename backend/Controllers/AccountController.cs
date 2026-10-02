@@ -183,7 +183,6 @@ namespace PersonalFinanceTracker.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendVerificationCode(ForgotPasswordViewModel model)
         {
             if (!ModelState.IsValid)
@@ -201,7 +200,6 @@ namespace PersonalFinanceTracker.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyCode(VerifyCodeViewModel model)
         {
             if (!ModelState.IsValid)
@@ -220,7 +218,6 @@ namespace PersonalFinanceTracker.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
             if (!ModelState.IsValid)
