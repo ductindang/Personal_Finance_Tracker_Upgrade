@@ -18,12 +18,12 @@ public class CategoryService : ICategoryService
         _transactionRepository = transactionRepository;
     }
 
-    public async Task<List<Category>> GetCategoriesAsync()
+    public async Task<List<Category>> GetCategoriesAsync(int userId)
     {
-        return await _categoryRepository.GetAllCategoriesAsync();
+        return await _categoryRepository.GetAllCategoriesAsync(userId);
     }
 
-    public async Task<(bool Success, string? ErrorMessage, Category? Category)> SaveCategoryAsync(Category model)
+    public async Task<(bool Success, string? ErrorMessage, Category? Category)> SaveCategoryAsync(Category model, int userId)
     {
         if (model == null || string.IsNullOrWhiteSpace(model.Name))
         {
@@ -35,12 +35,13 @@ public class CategoryService : ICategoryService
         // Check for duplicates for new category
         if (model.Id == 0)
         {
-            var existing = await _categoryRepository.GetByNameAndTypeAsync(model.Name, model.Type);
+            var existing = await _categoryRepository.GetByNameAndTypeAsync(model.Name, model.Type, userId);
             if (existing != null)
             {
                 return (false, $"Category '{model.Name}' already exists under {model.Type}.", null);
             }
 
+            model.UserId = userId;
             await _categoryRepository.AddAsync(model);
         }
         else
@@ -51,15 +52,25 @@ public class CategoryService : ICategoryService
                 return (false, "Category not found.", null);
             }
 
+            if (original.UserId == null)
+            {
+                return (false, "Cannot modify system default categories.", null);
+            }
+
+            if (original.UserId != userId)
+            {
+                return (false, "Unauthorized to modify this category.", null);
+            }
+
             // Check if renaming causes a duplicate with another category
-            var duplicate = await _categoryRepository.GetByNameAndTypeAsync(model.Name, model.Type);
+            var duplicate = await _categoryRepository.GetByNameAndTypeAsync(model.Name, model.Type, userId);
             if (duplicate != null && duplicate.Id != model.Id)
             {
                 return (false, $"Category '{model.Name}' already exists.", null);
             }
 
             // Update transactions using this category
-            await _transactionRepository.UpdateCategoryNameAsync(original.Name, original.Type, model.Name);
+            await _transactionRepository.UpdateCategoryNameAsync(userId, original.Name, original.Type, model.Name);
             await _transactionRepository.SaveChangesAsync(); // Commit transaction changes first or save them together
 
             original.Name = model.Name;
@@ -72,7 +83,7 @@ public class CategoryService : ICategoryService
         return (true, null, model);
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id)
+    public async Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id, int userId)
     {
         var category = await _categoryRepository.GetByIdAsync(id);
         if (category == null)
@@ -80,13 +91,18 @@ public class CategoryService : ICategoryService
             return (false, "Category not found.");
         }
 
-        if (category.Name == "Others")
+        if (category.UserId == null || category.Name == "Others")
         {
-            return (false, "Cannot delete the default 'Others' category.");
+            return (false, "Cannot delete system default categories.");
+        }
+
+        if (category.UserId != userId)
+        {
+            return (false, "Unauthorized to delete this category.");
         }
 
         // Update all transactions of this category to "Others"
-        await _transactionRepository.SetCategoryToOthersAsync(category.Name, category.Type);
+        await _transactionRepository.SetCategoryToOthersAsync(userId, category.Name, category.Type);
         await _transactionRepository.SaveChangesAsync();
 
         _categoryRepository.Delete(category);

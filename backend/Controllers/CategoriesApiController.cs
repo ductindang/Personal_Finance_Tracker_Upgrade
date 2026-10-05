@@ -1,11 +1,14 @@
-using System;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.Models;
 using PersonalFinanceTracker.Services.Interfaces;
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace PersonalFinanceTracker.Controllers;
 
+[Authorize]
 [ApiController]
 public class CategoriesApiController : Controller
 {
@@ -16,6 +19,8 @@ public class CategoriesApiController : Controller
         _categoryService = categoryService;
     }
 
+    private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     // 1. Get Categories
     [HttpGet]
     [Route("api/finance/categories")]
@@ -23,7 +28,7 @@ public class CategoriesApiController : Controller
     {
         try
         {
-            var categories = await _categoryService.GetCategoriesAsync();
+            var categories = await _categoryService.GetCategoriesAsync(CurrentUserId);
             return Json(categories);
         }
         catch (Exception ex)
@@ -39,7 +44,7 @@ public class CategoriesApiController : Controller
     {
         try
         {
-            var result = await _categoryService.SaveCategoryAsync(model);
+            var result = await _categoryService.SaveCategoryAsync(model, CurrentUserId);
             if (!result.Success)
             {
                 if (result.ErrorMessage == "Category not found.")
@@ -64,7 +69,7 @@ public class CategoriesApiController : Controller
     {
         try
         {
-            var result = await _categoryService.DeleteCategoryAsync(id);
+            var result = await _categoryService.DeleteCategoryAsync(id, CurrentUserId);
             if (!result.Success)
             {
                 if (result.ErrorMessage == "Category not found.")

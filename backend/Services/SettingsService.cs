@@ -42,7 +42,7 @@ public class SettingsService : ISettingsService
         var transactions = await _transactionRepository.GetAllTransactionsAsync(userId);
         var budgets = await _budgetRepository.GetAllBudgetsAsync(userId);
         var savingsGoals = await _savingsGoalRepository.GetAllGoalsAsync(userId);
-        var categories = await _categoryRepository.GetAllCategoriesAsync();
+        var categories = await _categoryRepository.GetAllCategoriesAsync(userId);
 
         return (transactions, budgets, savingsGoals, categories);
     }

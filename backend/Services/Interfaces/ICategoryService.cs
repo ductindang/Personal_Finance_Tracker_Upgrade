@@ -6,7 +6,7 @@ namespace PersonalFinanceTracker.Services.Interfaces;
 
 public interface ICategoryService
 {
-    Task<List<Category>> GetCategoriesAsync();
-    Task<(bool Success, string? ErrorMessage, Category? Category)> SaveCategoryAsync(Category model);
-    Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id);
+    Task<List<Category>> GetCategoriesAsync(int userId);
+    Task<(bool Success, string? ErrorMessage, Category? Category)> SaveCategoryAsync(Category model, int userId);
+    Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id, int userId);
 }

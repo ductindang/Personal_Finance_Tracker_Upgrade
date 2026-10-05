@@ -18,9 +18,10 @@ public class CategoryRepository : ICategoryRepository
         _context = context;
     }
 
-    public async Task<List<Category>> GetAllCategoriesAsync()
+    public async Task<List<Category>> GetAllCategoriesAsync(int userId)
     {
         return await _context.Categories
+            .Where(c=> c.UserId == null || c.UserId == userId)
             .OrderBy(c => c.Type)
             .ThenBy(c => c.Name)
             .ToListAsync();
@@ -31,10 +32,10 @@ public class CategoryRepository : ICategoryRepository
         return await _context.Categories.FindAsync(id);
     }
 
-    public async Task<Category?> GetByNameAndTypeAsync(string name, string type)
+    public async Task<Category?> GetByNameAndTypeAsync(string name, string type, int userId)
     {
         return await _context.Categories
-            .FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower() && c.Type == type);
+            .FirstOrDefaultAsync(c => (c.UserId == null || c.UserId == userId) && c.Name.ToLower() == name.ToLower() && c.Type == type);
     }
 
     public async Task AddAsync(Category category)

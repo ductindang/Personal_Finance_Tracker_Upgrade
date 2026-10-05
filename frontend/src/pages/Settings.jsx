@@ -319,24 +319,27 @@ function Settings() {
                                 {incomeCategories.length === 0 ? (
                                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No income categories.</span>
                                 ) : (
-                                    incomeCategories.map(cat => (
-                                        <div key={cat.id} className="category-item-row">
-                                            <span>{cat.name}</span>
-                                            {cat.name !== 'Others' ? (
-                                                <button
-                                                    className="btn-icon delete-btn"
-                                                    title="Delete Category"
-                                                    onClick={() => triggerDeleteCategory(cat)}
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            ) : (
-                                                <span title="System Category" style={{ opacity: 0.5 }}>
-                                                    <Lock size={15} />
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))
+                                    incomeCategories.map(cat => {
+                                        const isSystemCategory = !cat.userId || cat.name === 'Others';
+                                        return (
+                                            <div key={cat.id} className="category-item-row">
+                                                <span>{cat.name}</span>
+                                                {!isSystemCategory ? (
+                                                    <button
+                                                        className="btn-icon delete-btn"
+                                                        title="Delete Category"
+                                                        onClick={() => triggerDeleteCategory(cat)}
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                ) : (
+                                                    <span className="category-lock-icon" title="System Category" style={{ opacity: 0.5 }}>
+                                                        <Lock size={15} />
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -350,24 +353,27 @@ function Settings() {
                                 {expenseCategories.length === 0 ? (
                                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No expense categories.</span>
                                 ) : (
-                                    expenseCategories.map(cat => (
-                                        <div key={cat.id} className="category-item-row">
-                                            <span>{cat.name}</span>
-                                            {cat.name !== 'Others' ? (
-                                                <button
-                                                    className="btn-icon delete-btn"
-                                                    title="Delete Category"
-                                                    onClick={() => triggerDeleteCategory(cat)}
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            ) : (
-                                                <span title="System Category" style={{ opacity: 0.5 }}>
-                                                    <Lock size={15} />
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))
+                                    expenseCategories.map(cat => {
+                                        const isSystemCategory = !cat.userId || cat.name === 'Others';
+                                        return (
+                                            <div key={cat.id} className="category-item-row">
+                                                <span>{cat.name}</span>
+                                                {!isSystemCategory ? (
+                                                    <button
+                                                        className="btn-icon delete-btn"
+                                                        title="Delete Category"
+                                                        onClick={() => triggerDeleteCategory(cat)}
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                ) : (
+                                                    <span className="category-lock-icon" title="System Category" style={{ opacity: 0.5 }}>
+                                                        <Lock size={15} />
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
