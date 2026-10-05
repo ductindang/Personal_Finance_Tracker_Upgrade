@@ -15,6 +15,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
+import { CurrencyProvider } from './context/CurrencyContext';
 
 // ====================================================
 // MIDDLEWARE GATE: Chịu trách nhiệm phân luồng toàn bộ úng dụng
@@ -88,13 +89,15 @@ function App() {
     <Router>
       {/* Bọc AuthProvider ở ngoài cùng để tất cả các route bên dưới đều truy cập được kho AuthContext */}
       <AuthProvider>
-        <AppContent />
-        {/* Thêm cấu hình Toaster hiển thị ở góc phải phía trên */}
-        <Toaster 
-          position='top-right'
-          reverseOrder={false}
-          toastOption={{style:{background: '#161929', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.08'}}}
-        />
+         <CurrencyProvider>
+            <AppContent />
+            {/* Thêm cấu hình Toaster hiển thị ở góc phải phía trên */}
+            <Toaster 
+              position='top-right'
+              reverseOrder={false}
+              toastOption={{style:{background: '#161929', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.08'}}}
+            />
+          </CurrencyProvider>
       </AuthProvider>
     </Router>
   );

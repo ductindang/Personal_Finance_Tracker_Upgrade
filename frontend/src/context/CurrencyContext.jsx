@@ -1,26 +1,28 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const CurrencyContext = createContext(null);
 
 export function CurrencyProvider({ children }) {
+    const auth = useAuth();
+    const user = auth?.user;
+    
+    // Key theo từng user: ví dụ 'aura_currency_user1@gmail.com'
+    const storageKey = user?.email ? `aura_currency_${user.email}` : 'aura_currency_guest';
+
     const [currency, setCurrencyState] = useState(() => {
-        return localStorage.getItem('aura_currency') || '$';
+        return localStorage.getItem(storageKey) || '$';
     });
 
-    // Lắng nghe event storage để đồng bộ giữa các tab
+    // Khi đổi tài khoản đăng nhập (user thay đổi), tự động tải lại tiền tệ của tài khoản đó
     useEffect(() => {
-        const handleStorage = (e) => {
-            if (e.key === 'aura_currency' && e.newValue) {
-                setCurrencyState(e.newValue);
-            }
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
+        const savedCurrency = localStorage.getItem(storageKey) || '$';
+        setCurrencyState(savedCurrency);
+    }, [storageKey]);
 
     const setCurrency = (val) => {
         setCurrencyState(val);
-        localStorage.setItem('aura_currency', val);
+        localStorage.setItem(storageKey, val);
     };
 
     return (
@@ -30,7 +32,6 @@ export function CurrencyProvider({ children }) {
     );
 }
 
-// Custom hook để sử dụng trong các component
 export function useCurrency() {
     const ctx = useContext(CurrencyContext);
     if (!ctx) throw new Error('useCurrency must be used within a CurrencyProvider');

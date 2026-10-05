@@ -8,8 +8,6 @@ import { CurrencyProvider } from './context/CurrencyContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <CurrencyProvider>
       <App />
-    </CurrencyProvider>
   </StrictMode>,
 )

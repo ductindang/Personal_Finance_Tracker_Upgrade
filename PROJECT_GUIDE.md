@@ -100,6 +100,7 @@ erDiagram
         int Id PK
         string Name
         string Type
+        int UserId FK "nullable"
     }
     RECURRING_TRANSACTIONS {
         int Id PK
@@ -121,6 +122,7 @@ erDiagram
     USERS ||--o{ BUDGETS : monitors
     USERS ||--o{ SAVINGS_GOALS : targets
     USERS ||--o{ RECURRING_TRANSACTIONS : configures
+    USERS ||--o{ CATEGORIES : "customizes (nullable FK)"
 ```
 
 ### Entities Details
@@ -163,10 +165,11 @@ Represents specific user targets.
 - `UserId` (int, FK referencing `User`)
 
 #### 5. `Category`
-Master lookup items for UI dropdowns. Seeded with 12 items (Salary, Investment, Food & Beverage, Shopping, etc.).
+Master lookup items for UI dropdowns and budget tracking. Seeded with 12 system-level items (Salary, Investment, Food & Beverage, Shopping, etc. with `UserId = null`). Users can add custom categories scoped to their account (`UserId = currentUserId`).
 - `Id` (int, PK)
 - `Name` (string)
 - `Type` (string: `"income"` or `"expense"`)
+- `UserId` (int, nullable FK referencing `User` - null for system default, set for user-defined custom categories)
 
 #### 6. `RecurringTransaction`
 Defines rules for generating recurring income or expense transactions automatically.
