@@ -53,4 +53,18 @@ public class UserRepository : IUserRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<User>> GetOtherUsersAsync(int currentUserId, string? search = null)
+    {
+        var query = _context.Users.Where(u => u.Id != currentUserId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(u => u.Username.ToLower().Contains(term) ||
+                                (u.FullName != null && u.FullName.ToLower().Contains(term)));
+        }
+
+        return await query.OrderBy(u => u.Username).ToListAsync();
+    }
 }

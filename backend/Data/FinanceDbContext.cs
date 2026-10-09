@@ -17,6 +17,7 @@ namespace PersonalFinanceTracker.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<RecurringTransaction> RecurringTransactions { get; set; } = null!;
         public DbSet<UserSecurityCode> UserSecurityCodes { get; set; } = null!;
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +72,27 @@ namespace PersonalFinanceTracker.Data
             modelBuilder.Entity<RecurringTransaction>()
                 .Property(rt => rt.Amount)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                // Sender foreign key
+                entity.HasOne(m => m.Sender)
+                    .WithMany()
+                    .HasForeignKey(m => m.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict); // Dùng Restrict để tránh lỗi multiple cascade paths trong SQL Server
+
+                // Receiver foreign key
+                entity.HasOne(m => m.Receiver)
+                    .WithMany()
+                    .HasForeignKey(m => m.ReceiverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Index giúp tải lịch sử tin nhắn giữa 2 người cực nhanh
+                entity.HasIndex(m => new { m.SenderId, m.ReceiverId, m.CreatedAt });
+
+                // Index giúp đếm nhanh số tin nhắn chưa đọc
+                entity.HasIndex(m => new { m.ReceiverId, m.IsRead });
+            });
         }
     }
 }

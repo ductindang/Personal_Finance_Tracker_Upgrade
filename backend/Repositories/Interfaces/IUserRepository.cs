@@ -12,4 +12,6 @@ public interface IUserRepository
     Task AddAsync(User user);
     void Update(User user);
     Task SaveChangesAsync();
+
+    Task<List<User>> GetOtherUsersAsync(int currentUserId, string? search = null);
 }

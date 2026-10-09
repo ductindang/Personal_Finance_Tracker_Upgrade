@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using PersonalFinanceTracker.Data;
+using PersonalFinanceTracker.Hubs;
 using PersonalFinanceTracker.Models;
 using PersonalFinanceTracker.Repositories;
 using PersonalFinanceTracker.Repositories.Interfaces;
@@ -12,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 // Add CORS Policy for React Frontend
 builder.Services.AddCors(options =>
@@ -100,6 +102,7 @@ builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IRecurringTransactionRepository, RecurringTransactionRepository>();
 builder.Services.AddScoped<IUserSecurityCodeRepository, UserSecurityCodeRepository>();
+builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 
 // Register Services
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
@@ -111,6 +114,7 @@ builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IRecurringTransactionService, RecurringTransactionService>();
+builder.Services.AddScoped<IChatMessageService, ChatMessageService>();
 
 // Enable Swagger API Documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -160,5 +164,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
